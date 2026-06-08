@@ -9,21 +9,21 @@
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700;900&family=Onest:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   /* ============================================
-     DESIGN SYSTEM — mint & teal, soft medical
+     DESIGN SYSTEM — медицинский, тёмный, острый
      ============================================ */
   :root {
-    --bg:       #0d1a16;
-    --bg2:      #111f1a;
-    --bg3:      #162820;
-    --card:     #1a3028;
-    --border:   #1f3d30;
-    --accent:   #5ecfa8;
-    --accent2:  #7ac9c0;
-    --danger:   #e05c6e;
-    --warn:     #e8b44a;
-    --text:     #dff2ec;
-    --text2:    #7aa898;
-    --text3:    #3a5e52;
+    --bg:       #0a0d12;
+    --bg2:      #111520;
+    --bg3:      #181e2c;
+    --card:     #1a2235;
+    --border:   #242d42;
+    --accent:   #00e5a0;
+    --accent2:  #0099ff;
+    --danger:   #ff4466;
+    --warn:     #ffaa00;
+    --text:     #e8edf5;
+    --text2:    #7a8aa8;
+    --text3:    #3d4f6a;
     --radius:   14px;
     --radius-s: 8px;
     --shadow:   0 4px 24px rgba(0,0,0,.45);
@@ -95,7 +95,7 @@
   .btn:active { transform: scale(.97); }
   .btn-primary { background: var(--accent); color: #000; }
   .btn-secondary { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
-  .btn-danger { background: rgba(224,92,110,.15); color: var(--danger); border: 1px solid rgba(224,92,110,.3); }
+  .btn-danger { background: rgba(255,68,102,.15); color: var(--danger); border: 1px solid rgba(255,68,102,.3); }
   .btn-ghost { background: transparent; color: var(--accent2); }
   .btn-sm { padding: 10px 16px; font-size: 13px; border-radius: var(--radius-s); }
 
@@ -104,9 +104,9 @@
     display: inline-flex; align-items: center; gap: 4px;
     padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 600;
   }
-  .badge-green { background: rgba(94,207,168,.12); color: var(--accent); }
-  .badge-blue  { background: rgba(122,201,192,.12); color: var(--accent2); }
-  .badge-red   { background: rgba(224,92,110,.12); color: var(--danger); }
+  .badge-green { background: rgba(0,229,160,.12); color: var(--accent); }
+  .badge-blue  { background: rgba(0,153,255,.12); color: var(--accent2); }
+  .badge-red   { background: rgba(255,68,102,.12); color: var(--danger); }
   .badge-gray  { background: var(--bg3); color: var(--text2); }
 
   /* ─── SECTION LABEL ─── */
@@ -144,9 +144,9 @@
     font-size: 14px; line-height: 1.5;
   }
   .option:active { background: var(--card); }
-  .option.selected { border-color: var(--accent2); background: rgba(122,201,192,.06); }
-  .option.correct  { border-color: var(--accent); background: rgba(94,207,168,.08); }
-  .option.wrong    { border-color: var(--danger); background: rgba(224,92,110,.06); }
+  .option.selected { border-color: var(--accent2); background: rgba(0,153,255,.06); }
+  .option.correct  { border-color: var(--accent); background: rgba(0,229,160,.08); }
+  .option.wrong    { border-color: var(--danger); background: rgba(255,68,102,.06); }
   .option-letter {
     width: 28px; height: 28px; border-radius: 8px;
     background: var(--border); display: flex; align-items: center; justify-content: center;
@@ -226,7 +226,7 @@
 
   /* ─── HERO on HOME ─── */
   .home-hero {
-    background: linear-gradient(135deg, #0d2a1e 0%, #0a1a14 50%, #0d2018 100%);
+    background: linear-gradient(135deg, #0d1a2a 0%, #0a1520 50%, #0d1a1a 100%);
     border: 1px solid var(--border); border-radius: var(--radius);
     padding: 20px; margin-bottom: 16px; position: relative; overflow: hidden;
   }
@@ -296,8 +296,8 @@
 
   /* ─── PREMIUM BANNER ─── */
   .premium-banner {
-    background: linear-gradient(135deg, #0d2a1e, #0a1e1a);
-    border: 1px solid rgba(94,207,168,.2);
+    background: linear-gradient(135deg, #0d2a1a, #0a1a2a);
+    border: 1px solid rgba(0,229,160,.2);
     border-radius: var(--radius); padding: 16px;
     margin-bottom: 12px;
   }
@@ -311,8 +311,8 @@
 
   /* pulse on correct answer */
   @keyframes pulse-green {
-    0%,100% { box-shadow: 0 0 0 0 rgba(94,207,168,0); }
-    50%      { box-shadow: 0 0 0 8px rgba(94,207,168,.2); }
+    0%,100% { box-shadow: 0 0 0 0 rgba(0,229,160,0); }
+    50%      { box-shadow: 0 0 0 8px rgba(0,229,160,.2); }
   }
   .option.correct { animation: pulse-green .6s ease; }
 </style>
@@ -322,122 +322,12 @@
 <!-- ════════════════════════════════════════
      SCREEN: LOADING
 ════════════════════════════════════════ -->
-<style>
-  /* ─── SNAKE LOADER ─── */
-  #s-loading {
-    background: radial-gradient(ellipse at center, #1a3a2a 0%, #0d1a16 70%);
-  }
-  .snake-stage {
-    position: relative;
-    width: 120px;
-    height: 120px;
-  }
-  /* The track path snake follows */
-  .snake-track {
-    position: absolute;
-    inset: 0;
-  }
-  /* Snake SVG animates along a circular path */
-  .snake-svg {
-    width: 120px;
-    height: 120px;
-    animation: snake-orbit 2.2s linear infinite;
-    transform-origin: 60px 60px;
-  }
-  @keyframes snake-orbit {
-    0%   { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  /* The snake body segments fade in opacity toward the tail */
-  .snake-body {
-    animation: snake-wiggle 0.5s ease-in-out infinite alternate;
-  }
-  @keyframes snake-wiggle {
-    from { transform: translateY(0px); }
-    to   { transform: translateY(2px); }
-  }
-  /* Glowing dot behind the snake */
-  .snake-glow {
-    position: absolute;
-    width: 18px; height: 18px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(94,207,168,.45) 0%, transparent 70%);
-    animation: snake-orbit 2.2s linear infinite;
-    transform-origin: 60px 60px;
-    top: 42px; left: 108px;
-    margin-top: -9px; margin-left: -9px;
-  }
-  .load-title {
-    font-family: var(--font-head);
-    font-size: 22px;
-    font-weight: 900;
-    letter-spacing: -.01em;
-    color: var(--text);
-  }
-  .load-dots span {
-    display: inline-block;
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--accent);
-    opacity: 0.3;
-    margin: 0 3px;
-    animation: dot-blink 1.2s ease-in-out infinite;
-  }
-  .load-dots span:nth-child(2) { animation-delay: .2s; }
-  .load-dots span:nth-child(3) { animation-delay: .4s; }
-  @keyframes dot-blink {
-    0%,100% { opacity: 0.2; transform: scale(1); }
-    50%      { opacity: 1;   transform: scale(1.3); }
-  }
-</style>
 <div class="screen" id="s-loading">
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:20px">
-
-    <!-- Animated snake circle -->
-    <div class="snake-stage">
-      <!-- Faint track circle -->
-      <svg class="snake-track" viewBox="0 0 120 120">
-        <circle cx="60" cy="60" r="48" fill="none" stroke="rgba(94,207,168,.08)" stroke-width="8"/>
-      </svg>
-      <!-- Glowing tail glow -->
-      <div class="snake-glow"></div>
-      <!-- Snake SVG orbiting -->
-      <svg class="snake-svg" viewBox="0 0 120 120" style="position:absolute;inset:0">
-        <!-- Snake body arc (thick, rounded) -->
-        <circle cx="60" cy="60" r="48" fill="none"
-          stroke="url(#snakeGrad)" stroke-width="9"
-          stroke-linecap="round"
-          stroke-dasharray="200 104"
-          stroke-dashoffset="0"/>
-        <!-- Snake head -->
-        <g class="snake-body">
-          <!-- Head circle -->
-          <circle cx="108" cy="60" r="8" fill="#5ecfa8"/>
-          <!-- Eye -->
-          <circle cx="110.5" cy="57.5" r="2" fill="#0d1a16"/>
-          <circle cx="111.2" cy="57" r="0.7" fill="#fff"/>
-          <!-- Tongue -->
-          <line x1="116" y1="60" x2="119" y2="58" stroke="#e05c6e" stroke-width="1.2" stroke-linecap="round"/>
-          <line x1="116" y1="60" x2="119" y2="62" stroke="#e05c6e" stroke-width="1.2" stroke-linecap="round"/>
-        </g>
-        <defs>
-          <linearGradient id="snakeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%"   stop-color="#5ecfa8" stop-opacity="0"/>
-            <stop offset="60%"  stop-color="#5ecfa8" stop-opacity="0.6"/>
-            <stop offset="100%" stop-color="#7ac9c0" stop-opacity="1"/>
-          </linearGradient>
-        </defs>
-      </svg>
-    </div>
-
-    <!-- Title -->
-    <div class="load-title">Rezident bot</div>
-
-    <!-- Animated dots -->
-    <div class="load-dots">
-      <span></span><span></span><span></span>
-    </div>
-
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px">
+    <div style="font-size:48px">🩺</div>
+    <div style="font-family:var(--font-head);font-size:20px;font-weight:900;letter-spacing:-.02em">REZIDENT</div>
+    <div style="color:var(--text2);font-size:13px">DİM Hazırlıq</div>
+    <div class="spinner"></div>
   </div>
 </div>
 
@@ -761,7 +651,7 @@
 // ═══════════════════════════════════════════════
 //  CONFIG  — поменяй BASE_URL на свой сервер
 // ═══════════════════════════════════════════════
-const BASE_URL = 'https://testbot-mini.onrender.com'; // ← СЮДА вставь URL своего API сервера
+const BASE_URL = 'https://YOUR_SERVER_URL'; // ← СЮДА вставь URL своего API сервера
 
 // ═══════════════════════════════════════════════
 //  TELEGRAM WEB APP INIT
@@ -769,8 +659,8 @@ const BASE_URL = 'https://testbot-mini.onrender.com'; // ← СЮДА встав
 const tg = window.Telegram?.WebApp;
 if (tg) {
   tg.expand();
-  tg.setHeaderColor('#0d1a16');
-  tg.setBackgroundColor('#0d1a16');
+  tg.setHeaderColor('#0a0d12');
+  tg.setBackgroundColor('#0a0d12');
   tg.ready();
 }
 
