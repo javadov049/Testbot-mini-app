@@ -713,13 +713,35 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
 </div>
 
 <!-- TOAST -->
+
+<!-- ══════════════════════════════════════
+     DUEL SCREEN
+══════════════════════════════════════ -->
+<div class="screen hidden" id="s-duel">
+  <div class="topbar">
+    <div class="topbar-back" onclick="goBack()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="var(--text)" stroke-width="2.2" stroke-linecap="round"/></svg>
+    </div>
+    <div><div class="topbar-title">⚔️ Duel</div><div class="topbar-sub">PvP Rəqabət</div></div>
+  </div>
+  <div class="scroll" style="padding-top:10px">
+    <div id="duel-content"><div class="spinner"></div></div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
 // ═══════════════════════════════════════════════
 //  CONFIG
 // ═══════════════════════════════════════════════
-const BASE_URL = 'https://testbot-mini.onrender.com'; // ← сюда вставить URL API сервера
+const BASE_URL = (()=>{
+  const stored = localStorage.getItem('_rezident_api');
+  if (stored) return stored;
+  // CONFIGURE: replace with your real API server URL
+  // e.g. 'https://api.yourdomain.com' or 'https://xxx.onrender.com'
+  return 'https://YOUR_SERVER_URL';
+})();
 
 const CARD_NUMBER = '5522 0993 5658 0951';
 
@@ -730,7 +752,7 @@ const PRODUCTS = {
   pack_exam:{ name:'1 İmtahan',         desc:'Tam simulyasiya',           price:'3 AZN',  stars:75,  type:'exams',   amount:1, icon:'🚀' },
 };
 
-const SUBJECTS = {
+const SUBJECTS_AZ = {
   anat:'Anatomiya', dx:'Daxili Xəstəliklər', qista:'Histologiya',
   cx:'Cərrahi Xəstəliklər', biox:'Biokimiya', umcer:'Ümumi Cərrahiyyə',
   norfiz:'Normal Fiziologiya', gin:'Ginekologiya', mikra:'Mikrobiologiya',
@@ -738,6 +760,16 @@ const SUBJECTS = {
   patan:'Patanatomiya', nevro:'Nevrologiya', farma:'Farmakologiya',
   psix:'Psixiatriya', yolux:'Yoluxucu Xəstəliklər'
 };
+const SUBJECTS_RU = {
+  anat:'Анатомия', dx:'Внутренние Болезни', qista:'Гистология',
+  cx:'Хирургические Болезни', biox:'Биохимия', umcer:'Общая Хирургия',
+  norfiz:'Нормальная Физиология', gin:'Гинекология', mikra:'Микробиология',
+  mam:'Акушерство', patfiz:'Патофизиология', ux:'Детские Болезни',
+  patan:'Патанатомия', nevro:'Неврология', farma:'Фармакология',
+  psix:'Психиатрия', yolux:'Инфекционные Болезни'
+};
+// Dynamic subjects map based on user language
+function SUBJECTS() { return (S.user?.lang||'az')==='ru' ? SUBJECTS_RU : SUBJECTS_AZ; }
 const SUBJ_ICONS = {
   anat:'🦴', dx:'🫀', qista:'🔬', cx:'🔪', biox:'⚗️', umcer:'🩹',
   norfiz:'⚡', gin:'🌸', mikra:'🦠', mam:'👶', patfiz:'🧪', ux:'🧒',
@@ -857,11 +889,23 @@ function toast(msg, ms=2200) {
 // ═══════════════════════════════════════════════
 async function init() {
   showScreen('s-loading');
-  // Render subjects immediately (no API needed)
   renderSubjectsGrid();
   renderShop();
+  // BUG-017: graceful screen when opened outside Telegram
+  if (!userId) {
+    document.getElementById('s-loading').innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;padding:32px;text-align:center;background:#FFFDF8">
+        <div style="font-size:56px">🩺</div>
+        <div style="font-family:'Nunito',sans-serif;font-size:22px;font-weight:900;color:#2A7A5E">Rezident</div>
+        <div style="font-size:14px;color:#4A6B5E;line-height:1.6;max-width:280px">Bu tətbiq yalnız Telegram daxilindən açıla bilər.<br><br>Botdan açmaq üçün aşağıdakı düyməyə basın.</div>
+        <a href="https://t.me/rezidentbot" style="text-decoration:none;width:100%;max-width:280px">
+          <button style="width:100%;padding:14px;background:#5BBB9B;color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer">Telegram-da aç</button>
+        </a>
+      </div>`;
+    showScreen('s-loading');
+    return;
+  }
   try {
-    if (!userId) { toast('Telegram-dan açın'); showScreen('s-home'); return; }
     const d = await api(`/user/${userId}`);
     S.user = d.user;
     renderHome();
@@ -882,9 +926,10 @@ function renderHome() {
   const name = u.name || 'Həkim';
   document.getElementById('hero-name').textContent = `Salam, ${name}! 👋`;
   const isPrem = isPremiumActive(u);
+  const _hl = u.lang||'az'; const _hr = _hl==='ru';
   document.getElementById('hero-sub').innerHTML = isPrem
-    ? '<span class="badge badge-mint">💎 PREMIUM aktiv</span>'
-    : '<span class="badge badge-gray">Start plan</span>';
+    ? `<span class="badge badge-mint">💎 PREMIUM ${_hr?'активен':'aktiv'}</span>`
+    : `<span class="badge badge-gray">${_hr?'Базовый план':'Start plan'}</span>`;
 
   const streak = u.streak || {};
   const stats  = u.stats  || {};
@@ -892,8 +937,9 @@ function renderHome() {
   const td  = stats.today_solved || 0;
   const goal = stats.daily_goal || 30;
   const pct = Math.min(100, Math.round(td/goal*100));
-  document.getElementById('streak-text').textContent = `${cur} gün seriya`;
-  document.getElementById('streak-goal').textContent = `Bugünkü hədəf: ${td}/${goal}`;
+  const _sl = S.user?.lang||'az'; const _sr = _sl==='ru';
+  document.getElementById('streak-text').textContent = _sr ? `${cur} дней подряд` : `${cur} gün seriya`;
+  document.getElementById('streak-goal').textContent = _sr ? `Цель на сегодня: ${td}/${goal}` : `Bugünkü hədəf: ${td}/${goal}`;
   document.getElementById('streak-pct').textContent  = `${pct}%`;
   refreshHomeLimits();
 }
@@ -937,13 +983,13 @@ function renderSubjectsGrid() {
   g.innerHTML = Object.keys(SUBJECTS).map(code => `
     <div class="subj-card fu" onclick="selectSubject('${code}')">
       <div class="subj-icon">${SUBJ_ICONS[code]||'📗'}</div>
-      <div class="subj-name">${SUBJECTS[code]}</div>
+      <div class="subj-name">${SUBJECTS()[code]}</div>
     </div>`).join('');
 }
 
 async function selectSubject(code) {
   tg?.HapticFeedback?.impactOccurred('light');
-  S.subject = SUBJECTS[code] || code;
+  S.subject = SUBJECTS()[code] || code;
   S.mode    = 'normal';
   S.lastParams = { type:'mini', subject:code };
   await doStartTest({ type:'mini', subject:code });
@@ -1016,7 +1062,7 @@ function renderQ() {
   document.getElementById('exam-prog').style.width = `${((S.idx+1)/n)*100}%`;
 
   const subKey = q.subject || '';
-  document.getElementById('q-subject').textContent = (SUBJECTS[subKey] || subKey).toUpperCase();
+  document.getElementById('q-subject').textContent = (SUBJECTS()[subKey] || subKey).toUpperCase();
 
   const qType = q.question_type || 1;
   S.curQType = qType;
@@ -1028,15 +1074,16 @@ function renderQ() {
   document.getElementById('q-text').textContent = q.question || '';
 
   const opts = q.options || [];
+  // BUG-007 fix: only shuffle for type 1; type 2/3 order must be preserved
   let shuffled = [...opts];
   let correctIdx = typeof q.correct_index === 'number' ? q.correct_index : 0;
 
-  // Type 1: shuffle
   if (qType === 1) {
     const flagged = opts.map((o,i) => [o, i===correctIdx]);
     for (let j=flagged.length-1;j>0;j--) { const k=Math.floor(Math.random()*(j+1)); [flagged[j],flagged[k]]=[flagged[k],flagged[j]]; }
     shuffled   = flagged.map(p=>p[0]);
     correctIdx = flagged.findIndex(p=>p[1]);
+    // type 2/3: shuffled and correctIdx already correctly initialised above (no shuffle)
   }
 
   S.curOpts    = shuffled;
@@ -1284,7 +1331,7 @@ async function loadMistakes() {
     startBtn.style.display = 'block';
     wrap.innerHTML = ms.map((m,i) => `
       <div class="card fu" style="animation-delay:${i*.03}s;margin-bottom:8px">
-        <div style="font-size:11px;color:var(--text3);margin-bottom:5px">Sual #${i+1} · ${SUBJECTS[m.subject]||m.subject||'—'}</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:5px">Sual #${i+1} · ${SUBJECTS()[m.subject]||m.subject||'—'}</div>
         <div style="font-size:13px;line-height:1.55;margin-bottom:9px">${escHtml(m.question_text||m.question||'')}</div>
         <div style="display:flex;flex-direction:column;gap:5px">
           <span class="badge badge-danger">👤 ${escHtml((m.user_text||'—').substring(0,60))}</span>
@@ -1298,29 +1345,11 @@ async function loadMistakes() {
 }
 
 async function startMistakesExam() {
+  // BUG-006 fix: use real API questions instead of fake options
   if (!isPremiumActive(S.user)) { goTo('s-shop'); return; }
-  const ms = S.savedMistakes;
-  if (!ms.length) { toast('Səhv yoxdur'); return; }
   tg?.HapticFeedback?.impactOccurred('medium');
-  // Build pseudo-questions from mistakes
-  S.qs = ms.slice(-50).map(m => ({
-    id: m.question_id || m.id || '',
-    question: m.question_text || m.question || '',
-    options: [ m.correct_text||'Düzgün cavab', m.user_text||'Səhv cavab', 'Seçim C', 'Seçim D' ].filter(Boolean),
-    correct_index: 0,
-    subject: m.subject || '',
-    question_type: 1,
-  }));
-  for (let i=S.qs.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [S.qs[i],S.qs[j]]=[S.qs[j],S.qs[i]]; }
-  S.idx = 0; S.score = 0; S.log = [];
-  S.mode = 'mistakes'; S.subject = 'Mistakes';
-  S.startTime = Date.now();
-  S.lastParams = null;
-  S.stack = [];
-  clearInterval(S.timerIv);
-  document.getElementById('exam-timer').style.display='none';
-  showScreen('s-exam');
-  renderQ();
+  S.lastParams = { type:'mistakes' };
+  await doStartTest({ type:'mistakes' });
 }
 
 // ═══════════════════════════════════════════════
@@ -1403,7 +1432,13 @@ async function loadProfile() {
       </button>
 
       <div class="section-label">HESAB</div>
-      <button class="btn btn-outline" style="margin-bottom:8px" onclick="openPromo()">🎟 Promokod</button>
+      <div class="section-label">${lang==='ru'?'ЯЗЫК / DİL':'DİL / ЯЗЫК'}</div>
+      <div class="btn-row" style="margin-bottom:8px">
+        <button class="btn ${lang==='az'?'btn-primary':'btn-outline'}" onclick="setLang('az')">🇦🇿 Azərbaycanca</button>
+        <button class="btn ${lang==='ru'?'btn-primary':'btn-outline'}" onclick="setLang('ru')">🇷🇺 Русский</button>
+      </div>
+      <div class="section-label">${lang==='ru'?'ПРОМОКОД':'PROMOKOD'}</div>
+      <button class="btn btn-outline" style="margin-bottom:8px" onclick="openPromo()">🎟 ${lang==='ru'?'Промокод':'Promokod'}</button>
       <button class="btn btn-outline" style="margin-bottom:8px" onclick="shareRef(${JSON.stringify(d.ref_link||'')})">📤 Dostu dəvət et (+1 gün)</button>
       <div class="btn-row" style="margin-bottom:8px">
         <a href="https://t.me/rezidentadmin" style="flex:1;text-decoration:none"><button class="btn btn-ghost" style="width:100%">🆘 Dəstək</button></a>
@@ -1424,14 +1459,102 @@ function openPromo() {
   if (!tg) toast('Botda /start yazın → Kabinet → Promokod');
 }
 
+function setLang(lang) {
+  if (S.user) S.user.lang = lang;
+  api('/set_lang', { user_id: userId, lang }).catch(()=>{});
+  loadProfile();
+  toast(lang==='ru' ? '🇷🇺 Русский выбран' : '🇦🇿 Azərbaycanca seçildi');
+}
+
 function shareRef(link) {
   if (!link) { toast('Profil yüklənmədi'); return; }
   tg?.openTelegramLink?.(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('Rezidentura imtahanına hazırlaşmaq üçün bot!')}`);
 }
 
 function startDuel() {
-  tg?.showAlert('Duel başlatmaq üçün botda "⚔️ Duel" düyməsinə basın.');
-  if (!tg) toast('Duel yalnız botda mövcuddur');
+  // BUG-020 fix: open duel hub screen
+  goTo('s-duel');
+  loadDuelHub();
+}
+
+async function loadDuelHub() {
+  const wrap = document.getElementById('duel-content');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="spinner"></div>';
+  try {
+    const d = await api(`/duel/hub/${userId}`);
+    const lang = S.user?.lang || 'az';
+    const isTu = lang === 'ru';
+    wrap.innerHTML = `
+      <div class="card card-mint" style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between">
+          <div><div style="font-size:11px;color:var(--text3);margin-bottom:2px">${isTu?'Всего':'Cəmi'}</div><div style="font-family:var(--fh);font-size:22px;font-weight:900">${d.total||0}</div></div>
+          <div><div style="font-size:11px;color:var(--text3);margin-bottom:2px">${isTu?'Победы':'Qalibiyyət'}</div><div style="font-family:var(--fh);font-size:22px;font-weight:900;color:var(--correct)">${d.wins||0}</div></div>
+          <div><div style="font-size:11px;color:var(--text3);margin-bottom:2px">${isTu?'Поражения':'Məğlubiyyət'}</div><div style="font-family:var(--fh);font-size:22px;font-weight:900;color:var(--danger)">${d.losses||0}</div></div>
+          <div><div style="font-size:11px;color:var(--text3);margin-bottom:2px">${isTu?'Ничья':'Bərabər'}</div><div style="font-family:var(--fh);font-size:22px;font-weight:900;color:var(--warn)">${d.draws||0}</div></div>
+        </div>
+      </div>
+      ${d.my_duel ? `<div class="card card-mint" style="margin-bottom:10px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px">⚔️ ${isTu?'Ваш активный дуэль':'Sizin aktiv duel'}</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:10px">${d.my_duel.count} ${isTu?'вопросов':'sual'}</div>
+        <div class="btn-row">
+          <button class="btn btn-primary btn-sm" onclick="shareDuelLink('${d.my_duel.link||''}')">📤 ${isTu?'Поделиться':'Paylaş'}</button>
+          <button class="btn btn-danger btn-sm" onclick="cancelDuel('${d.my_duel.duel_id}')">❌ ${isTu?'Отмена':'Ləğv et'}</button>
+        </div>
+      </div>` : ''}
+      <div class="section-label">${isTu?'ОТКРЫТЫЕ ДУЭЛИ':'AÇIQ DUELLƏR'} (${d.active||0})</div>
+      ${(d.open_duels||[]).map(od => `
+        <div class="qa-card" onclick="joinDuel('${od.duel_id}')">
+          <div class="qa-icon">⚔️</div>
+          <div class="qa-text"><div class="qa-title">${escHtml(od.creator_name)}</div><div class="qa-sub">${od.count} ${isTu?'вопросов':'sual'} · ${od.age}</div></div>
+          <span class="badge badge-mint">${isTu?'Войти':'Qoşul'}</span>
+        </div>`).join('') || `<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">${isTu?'Нет открытых дуэлей':'Açıq duel yoxdur'}</div>`}
+      <div style="margin-top:10px">
+        <button class="btn btn-primary" onclick="createDuel()">${isTu?'⚔️ Создать дуэль':'⚔️ Duel yarat'}</button>
+      </div>`;
+  } catch(e) {
+    if (document.getElementById('duel-content'))
+      document.getElementById('duel-content').innerHTML = '<div class="card card-danger"><p>Yüklənmə xətası</p></div>';
+  }
+}
+
+async function createDuel() {
+  tg?.HapticFeedback?.impactOccurred('medium');
+  try {
+    const d = await api('/duel/create', { user_id: userId, question_count: 10 });
+    if (d.ok && d.link) {
+      toast('✅ Duel yaradıldı!');
+      shareDuelLink(d.link);
+      loadDuelHub();
+    } else toast('❌ ' + (d.error||'Xəta'));
+  } catch { toast('Bağlantı xətası'); }
+}
+
+async function joinDuel(duelId) {
+  tg?.HapticFeedback?.impactOccurred('medium');
+  try {
+    const d = await api('/duel/join', { user_id: userId, duel_id: duelId });
+    if (d.ok && d.questions) {
+      S.qs=d.questions; S.idx=0; S.score=0; S.mode='duel'; S.subject='Duel';
+      S.log=[]; S.startTime=Date.now(); S.lastParams=null;
+      S.stack=[]; clearInterval(S.timerIv);
+      document.getElementById('exam-timer').style.display='none';
+      showScreen('s-exam'); renderQ();
+    } else toast('❌ ' + (d.error||'Xəta'));
+  } catch { toast('Bağlantı xətası'); }
+}
+
+async function cancelDuel(duelId) {
+  try {
+    await api('/duel/cancel', { user_id: userId, duel_id: duelId });
+    toast('Duel ləğv edildi'); loadDuelHub();
+  } catch { toast('Xəta'); }
+}
+
+function shareDuelLink(link) {
+  if (!link) { toast('Link mövcud deyil'); return; }
+  tg?.openTelegramLink?.('https://t.me/share/url?url=' + encodeURIComponent(link));
+  if (!tg) navigator.clipboard?.writeText(link).then(()=>toast('Link kopyalandı'));
 }
 
 // ═══════════════════════════════════════════════
