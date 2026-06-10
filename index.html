@@ -738,9 +738,17 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
 const BASE_URL = (()=>{
   const stored = localStorage.getItem('_rezident_api');
   if (stored) return stored;
-  // CONFIGURE: replace with your real API server URL
-  // e.g. 'https://api.yourdomain.com' or 'https://xxx.onrender.com'
-  return 'https://testbot-mini.onrender.com';
+  // ─── CONFIGURE BEFORE DEPLOY ───────────────────────────────────────
+  // Replace the string below with your real API server URL.
+  // Examples:
+  //   'https://api.yourdomain.com'
+  //   'https://mybot.onrender.com'
+  // You can also set it at runtime via browser console:
+  //   localStorage.setItem('_rezident_api', 'https://YOUR_URL'); location.reload();
+  // ───────────────────────────────────────────────────────────────────
+  const fromMeta = document.querySelector('meta[name="api-url"]')?.content;
+  if (fromMeta && fromMeta !== '__API_URL__') return fromMeta;
+  return 'https://YOUR_SERVER_URL';  // <-- ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL
 })();
 
 const CARD_NUMBER = '5522 0993 5658 0951';
@@ -980,7 +988,7 @@ function isPremiumActive(u) {
 function renderSubjectsGrid() {
   const g = document.getElementById('subj-grid');
   if (!g) return;
-  g.innerHTML = Object.keys(SUBJECTS).map(code => `
+  g.innerHTML = Object.keys(SUBJECTS_AZ).map(code => `
     <div class="subj-card fu" onclick="selectSubject('${code}')">
       <div class="subj-icon">${SUBJ_ICONS[code]||'📗'}</div>
       <div class="subj-name">${SUBJECTS()[code]}</div>
@@ -1198,17 +1206,8 @@ async function doFinish() {
   document.getElementById('res-streak').textContent = `${streak} gün`;
   document.getElementById('res-today').textContent  = `${td}/${goal}`;
 
-  // Arc animation
-  const circ = 2 * Math.PI * 54;
-  const offset = circ * (1 - pct/100);
-  setTimeout(() => {
-    const arc = document.getElementById('res-arc');
-    arc.style.transition = 'stroke-dashoffset 1.1s cubic-bezier(.4,0,.2,1)';
-    arc.style.strokeDashoffset = offset;
-    arc.style.stroke = pct >= 70 ? 'var(--correct)' : pct >= 50 ? 'var(--warn)' : 'var(--danger)';
-  }, 150);
+  // Arc animation — single animation block (БАГ-09 FIX: removed duplicate at 150ms)
 
-  // Wrong answers inline preview (first 3)
   const wrongs = S.log.filter(e => !e.is_correct);
   const ww = document.getElementById('res-wrongs-wrap');
   const wl = document.getElementById('res-wrongs-list');
@@ -1393,8 +1392,9 @@ async function loadProfile() {
     const streak = u.streak||{}, stats = u.stats||{};
     const cur = streak.current||0;
     const td = stats.today_solved||0, goal = stats.daily_goal||30;
+    const lang = u.lang || 'az';  // БАГ-01 FIX: was ReferenceError — lang not declared
 
-    let subText = 'Aktiv abunəlik yoxdur';
+    let subText = lang === 'ru' ? 'Активная подписка отсутствует' : 'Aktiv abunəlik yoxdur';
     if (isPrem && u.premium_until) {
       const dd = new Date(u.premium_until);
       const days = Math.ceil((dd-new Date())/86400000);
@@ -1448,15 +1448,79 @@ async function loadProfile() {
 }
 
 function openPromo() {
+  // БАГ-13 FIX: direct promo activation via API instead of redirecting to bot
   tg?.showPopup({
-    title:'🎟 Promokod',
-    message:'Promokodu daxil edin',
-    buttons:[{id:'ok',type:'default',text:'OK'},{id:'cancel',type:'cancel'}]
+    title: '🎟 Promokod',
+    message: (S.user?.lang === 'ru') ? 'Введите промокод:' : 'Promokodu daxil edin:',
+    buttons: [
+      { id:'ok', type:'default', text: 'OK' },
+      { id:'cancel', type:'cancel' }
+    ]
   }, async id => {
     if (id !== 'ok') return;
-    tg?.showAlert('Promokod daxil etmək üçün botda /start → Kabinet → Promokod seçin.');
+    // Telegram Mini App doesn't support input in showPopup,
+    // so we use a custom inline input approach
+    showPromoInput();
   });
-  if (!tg) toast('Botda /start yazın → Kabinet → Promokod');
+  if (!tg) showPromoInput();
+}
+
+function showPromoInput() {
+  const lang = S.user?.lang || 'az';
+  const wrap = document.getElementById('profile-content');
+  if (!wrap) return;
+  // Inject promo input at top of profile content
+  const promoEl = document.createElement('div');
+  promoEl.id = 'promo-inline';
+  promoEl.className = 'card card-mint';
+  promoEl.style.marginBottom = '10px';
+  promoEl.innerHTML = `
+    <div style="font-size:13px;font-weight:700;margin-bottom:8px">
+      ${lang === 'ru' ? '🎟 Активация промокода' : '🎟 Promokod aktivasiyası'}
+    </div>
+    <input class="input" id="promo-code-input" placeholder="${lang === 'ru' ? 'Введите промокод...' : 'Kodu daxil edin...'}"
+      style="margin-bottom:8px" maxlength="32" autocomplete="off">
+    <div class="btn-row">
+      <button class="btn btn-primary btn-sm" onclick="submitPromo()">
+        ${lang === 'ru' ? '✅ Активировать' : '✅ Aktivləşdir'}
+      </button>
+      <button class="btn btn-outline btn-sm" onclick="closePromoInput()">
+        ${lang === 'ru' ? 'Отмена' : 'Ləğv et'}
+      </button>
+    </div>
+    <div id="promo-result" style="margin-top:6px;font-size:13px"></div>
+  `;
+  wrap.prepend(promoEl);
+  document.getElementById('promo-code-input')?.focus();
+}
+
+function closePromoInput() {
+  document.getElementById('promo-inline')?.remove();
+}
+
+async function submitPromo() {
+  const input = document.getElementById('promo-code-input');
+  const code = input?.value?.trim();
+  const lang = S.user?.lang || 'az';
+  const resultEl = document.getElementById('promo-result');
+  if (!code) {
+    if (resultEl) resultEl.innerHTML = `<span style="color:var(--danger)">${lang === 'ru' ? 'Введите код' : 'Kodu daxil edin'}</span>`;
+    return;
+  }
+  if (resultEl) resultEl.textContent = lang === 'ru' ? '⏳ Проверяем...' : '⏳ Yoxlanır...';
+  try {
+    const d = await api('/promo', { user_id: userId, code });
+    if (d.ok) {
+      if (resultEl) resultEl.innerHTML = `<span style="color:var(--correct)">✅ ${escHtml(d.message || (lang === 'ru' ? 'Активировано!' : 'Aktivləşdirildi!'))}</span>`;
+      tg?.HapticFeedback?.notificationOccurred('success');
+      setTimeout(() => { closePromoInput(); loadProfile(); }, 1500);
+    } else {
+      if (resultEl) resultEl.innerHTML = `<span style="color:var(--danger)">❌ ${escHtml(d.error || (lang === 'ru' ? 'Ошибка' : 'Xəta'))}</span>`;
+      tg?.HapticFeedback?.notificationOccurred('error');
+    }
+  } catch {
+    if (resultEl) resultEl.innerHTML = `<span style="color:var(--danger)">${lang === 'ru' ? 'Ошибка соединения' : 'Bağlantı xətası'}</span>`;
+  }
 }
 
 function setLang(lang) {
@@ -1534,13 +1598,21 @@ async function joinDuel(duelId) {
   tg?.HapticFeedback?.impactOccurred('medium');
   try {
     const d = await api('/duel/join', { user_id: userId, duel_id: duelId });
-    if (d.ok && d.questions) {
+    if (d.error) { toast('❌ ' + d.error); return; }
+    if (d.ok && d.questions && d.questions.length > 0) {
+      // БАГ-05 FIX: backend now returns questions in /duel/join response
       S.qs=d.questions; S.idx=0; S.score=0; S.mode='duel'; S.subject='Duel';
       S.log=[]; S.startTime=Date.now(); S.lastParams=null;
       S.stack=[]; clearInterval(S.timerIv);
       document.getElementById('exam-timer').style.display='none';
       showScreen('s-exam'); renderQ();
-    } else toast('❌ ' + (d.error||'Xəta'));
+    } else if (d.ok) {
+      // Fallback: joined but no questions returned yet (waiting for opponent)
+      toast('✅ Duelə qoşuldunuz! Bot-da davam edin.');
+      loadDuelHub();
+    } else {
+      toast('❌ ' + (d.error||'Xəta'));
+    }
   } catch { toast('Bağlantı xətası'); }
 }
 
