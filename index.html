@@ -288,7 +288,26 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
 @keyframes pulseGreen { 0%,100% { box-shadow:0 0 0 0 rgba(58,170,122,0); } 50% { box-shadow:0 0 0 8px rgba(58,170,122,.18); } }
 .option.correct { animation:pulseGreen .5s ease; }
 
-/* ── FILE UPLOAD ── */
+/* ── SKELETON LOADING ── */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--mintbg) 25%, var(--border) 50%, var(--mintbg) 75%);
+  background-size: 600px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: var(--r-s);
+}
+.skel-block { height: 16px; margin-bottom: 8px; }
+.skel-block.h-sm  { height: 12px; }
+.skel-block.h-lg  { height: 22px; }
+.skel-block.h-xl  { height: 60px; }
+.skel-block.w-50  { width: 50%; }
+.skel-block.w-70  { width: 70%; }
+.skel-block.w-40  { width: 40%; }
+.skel-card { background: var(--white); border: 1.5px solid var(--border); border-radius: var(--r); padding: 14px; margin-bottom: 10px; }
+
 .upload-area {
   border:2px dashed var(--border); border-radius:var(--r);
   padding:28px 20px; text-align:center; cursor:pointer;
@@ -328,6 +347,36 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
 </div>
 
 <!-- ══════════════════════════════════════
+     OFFLINE SCREEN
+══════════════════════════════════════ -->
+<div class="screen hidden" id="s-offline" style="background:#FFFDF8;align-items:center;justify-content:center">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:0;padding:32px;text-align:center">
+    <div style="font-size:64px;margin-bottom:14px;line-height:1">📡</div>
+    <div style="font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;color:var(--text);margin-bottom:8px" id="offline-title">İnternet bağlantısı yoxdur</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.6;max-width:280px;margin-bottom:28px" id="offline-sub">Zəhmət olmasa internet bağlantınızı yoxlayın</div>
+    <button class="btn btn-primary" style="max-width:260px" onclick="checkOnline()" id="offline-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M1 4v6h6M23 20v-6h-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10M23 14l-4.64 4.36A9 9 0 013.51 15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span id="offline-btn-text">Yenidən yoxla</span>
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SERVER ERROR SCREEN
+══════════════════════════════════════ -->
+<div class="screen hidden" id="s-server-error" style="background:#FFFDF8;align-items:center;justify-content:center">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:0;padding:32px;text-align:center">
+    <div style="font-size:64px;margin-bottom:14px;line-height:1">⚠️</div>
+    <div style="font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;color:var(--text);margin-bottom:8px" id="server-error-title">Server əlçatan deyil</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.6;max-width:280px;margin-bottom:28px">Serverlə əlaqə qurula bilmədi. Bir az sonra yenidən cəhd edin.</div>
+    <button class="btn btn-primary" style="max-width:260px" onclick="retryAfterServerError()" id="server-error-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M1 4v6h6M23 20v-6h-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10M23 14l-4.64 4.36A9 9 0 013.51 15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span id="server-error-btn-text">Təkrar cəhd et</span>
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
      HOME SCREEN
 ══════════════════════════════════════ -->
 <div class="screen hidden" id="s-home">
@@ -362,6 +411,17 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
         <div class="lim-val" id="lim-duel">—</div>
         <div class="lim-lbl">Duel</div>
       </div>
+    </div>
+
+    <!-- CONTINUE EXAM BUTTON (Task 4) -->
+    <div id="continue-exam-wrap" style="display:none;margin-bottom:4px" class="fu">
+      <button class="btn btn-green" onclick="continueExam()" style="justify-content:flex-start;gap:12px">
+        <span style="font-size:20px">⏩</span>
+        <div style="text-align:left">
+          <div id="continue-exam-title" style="font-size:14px;font-weight:800">İmtahana davam et</div>
+          <div id="continue-exam-sub" style="font-size:11px;opacity:.8;font-weight:500;margin-top:1px"></div>
+        </div>
+      </button>
     </div>
 
     <div class="section-label">TESTLƏR</div>
@@ -600,6 +660,10 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
         <button class="btn btn-danger btn-sm" style="width:auto;padding:14px 16px" onclick="confirmClearMistakes()" title="Bütün səhvləri sil">🗑</button>
       </div>
     </div>
+    <!-- TASK 5: Search bar for mistakes -->
+    <div id="mistakes-search-wrap" style="display:none;margin-bottom:10px">
+      <input class="input" id="mistakes-search-input" type="text" placeholder="Axtar: sual, mövzu, fənn..." oninput="filterMistakes(this.value)" style="padding:11px 14px;font-size:14px">
+    </div>
     <div id="mistakes-content"><div class="spinner"></div></div>
   </div>
 </div>
@@ -695,7 +759,6 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
       <div style="font-family:var(--fh);font-size:14px;font-weight:800;margin-bottom:10px" id="pay-selected-label"></div>
       <div class="btn-row" style="margin-bottom:8px">
         <button class="btn btn-primary" onclick="payCard()">💳 Kart</button>
-        <button class="btn btn-secondary" onclick="payStars()">⭐️ Stars</button>
       </div>
     </div>
   </div>
@@ -780,16 +843,16 @@ const BASE_URL = (()=>{
   // ───────────────────────────────────────────────────────────────────
   const fromMeta = document.querySelector('meta[name="api-url"]')?.content;
   if (fromMeta && fromMeta !== '__API_URL__') return fromMeta;
-  return 'https://testbot-mini.onrender.com';  // <-- ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL
+  return 'https://YOUR_SERVER_URL';  // <-- ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL
 })();
 
 const CARD_NUMBER = '5522 0993 5658 0951';
 
 const PRODUCTS = {
-  month:    { name:'Premium — 1 Ay',   desc:'Tam limit, ən sərfəli',    price:'15 AZN', stars:350, type:'premium', days:30,  icon:'💎' },
-  week:     { name:'Premium — 5 Gün',  desc:'İntensiv hazırlıq',        price:'5 AZN',  stars:120, type:'premium', days:5,   icon:'⚡' },
-  pack_mini:{ name:'5 Mini-test',       desc:'Əlavə cəhd, yanmır',       price:'3 AZN',  stars:75,  type:'minis',   amount:5, icon:'📚' },
-  pack_exam:{ name:'1 İmtahan',         desc:'Tam simulyasiya',           price:'3 AZN',  stars:75,  type:'exams',   amount:1, icon:'🚀' },
+  month:    { name:'Premium — 1 Ay',   desc:'Tam limit, ən sərfəli',    price:'15 AZN', type:'premium', days:30,  icon:'💎' },
+  week:     { name:'Premium — 5 Gün',  desc:'İntensiv hazırlıq',        price:'5 AZN',  type:'premium', days:5,   icon:'⚡' },
+  pack_mini:{ name:'5 Mini-test',       desc:'Əlavə cəhd, yanmır',       price:'3 AZN',  type:'minis',   amount:5, icon:'📚' },
+  pack_exam:{ name:'1 İmtahan',         desc:'Tam simulyasiya',           price:'3 AZN',  type:'exams',   amount:1, icon:'🚀' },
 };
 
 const SUBJECTS_AZ = {
@@ -825,6 +888,21 @@ const tgUser  = tg?.initDataUnsafe?.user || {};
 const userId  = tgUser.id || null;
 const initData = tg?.initData || '';
 
+function applyTelegramTheme() {
+  if (!tg?.themeParams) return;
+  const tp = tg.themeParams;
+  const root = document.documentElement;
+  if (tp.bg_color)          root.style.setProperty('--bg-color',      tp.bg_color);
+  if (tp.text_color)        root.style.setProperty('--text-color',    tp.text_color);
+  if (tp.hint_color)        root.style.setProperty('--hint-color',    tp.hint_color);
+  if (tp.button_color)      root.style.setProperty('--button-color',  tp.button_color);
+  if (tp.button_text_color) root.style.setProperty('--button-text-color', tp.button_text_color);
+  if (tp.secondary_bg_color) root.style.setProperty('--secondary-bg-color', tp.secondary_bg_color);
+}
+
+applyTelegramTheme();
+if (tg) tg.onEvent('themeChanged', applyTelegramTheme);
+
 // ═══════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════
@@ -847,27 +925,126 @@ const S = {
 };
 
 // ═══════════════════════════════════════════════
+//  OFFLINE & SERVER ERROR (Tasks 1 & 2)
+// ═══════════════════════════════════════════════
+let _lastApiAction = null; // stores {path, body} for retry
+
+function _updateOfflineLabels() {
+  const lang = S.user?.lang || 'az';
+  const isRu = lang === 'ru';
+  const offTitle = document.getElementById('offline-title');
+  const offBtn   = document.getElementById('offline-btn-text');
+  const srvTitle = document.getElementById('server-error-title');
+  const srvBtn   = document.getElementById('server-error-btn-text');
+  if (offTitle) offTitle.textContent = isRu ? 'Нет подключения к интернету' : 'İnternet bağlantısı yoxdur';
+  if (offBtn)   offBtn.textContent   = isRu ? 'Проверить снова' : 'Yenidən yoxla';
+  if (srvTitle) srvTitle.textContent = isRu ? 'Сервер недоступен' : 'Server əlçatan deyil';
+  if (srvBtn)   srvBtn.textContent   = isRu ? 'Повторить' : 'Təkrar cəhd et';
+}
+
+function checkOnline() {
+  if (navigator.onLine) {
+    showScreen('s-loading');
+    init();
+  } else {
+    tg?.HapticFeedback?.notificationOccurred('error');
+    const btn = document.getElementById('offline-btn');
+    if (btn) { btn.style.opacity = '0.6'; setTimeout(() => btn.style.opacity = '1', 800); }
+  }
+}
+
+function retryAfterServerError() {
+  if (!navigator.onLine) { showScreen('s-offline'); return; }
+  showScreen('s-loading');
+  init();
+}
+
+// Listen for online/offline events
+window.addEventListener('online', () => {
+  if (currentScreen() === 's-offline') {
+    showScreen('s-loading');
+    init();
+  }
+});
+window.addEventListener('offline', () => {
+  showScreen('s-offline');
+  _updateOfflineLabels();
+});
+
+function _showServerError() {
+  _updateOfflineLabels();
+  showScreen('s-server-error');
+}
+
+// ═══════════════════════════════════════════════
 //  API
 // ═══════════════════════════════════════════════
-async function api(path, body) {
+const API_TIMEOUT_MS = 15000;
+
+async function api(path, body, { silent = false } = {}) {
+  if (!navigator.onLine) {
+    if (!silent) { _updateOfflineLabels(); showScreen('s-offline'); }
+    throw new Error('offline');
+  }
   const opts = {
     method: body ? 'POST' : 'GET',
     headers: { 'Content-Type':'application/json', 'X-Init-Data': initData },
   };
   if (body) opts.body = JSON.stringify(body);
-  const r = await fetch(BASE_URL + path, opts);
-  if (!r.ok) throw new Error(await r.text());
-  return r.json();
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+  opts.signal = controller.signal;
+
+  try {
+    const r = await fetch(BASE_URL + path, opts);
+    clearTimeout(timer);
+    if (r.status >= 500) {
+      if (!silent) _showServerError();
+      throw new Error(`server_error_${r.status}`);
+    }
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  } catch(e) {
+    clearTimeout(timer);
+    if (e.name === 'AbortError') {
+      if (!silent) _showServerError();
+      throw new Error('timeout');
+    }
+    if (e.message === 'offline' || e.message === 'Failed to fetch' || e.name === 'TypeError') {
+      if (!silent) { _updateOfflineLabels(); showScreen('s-offline'); }
+      throw new Error('offline');
+    }
+    throw e;
+  }
 }
 
-async function apiForm(path, fd) {
-  const r = await fetch(BASE_URL + path, {
-    method: 'POST',
-    headers: { 'X-Init-Data': initData },
-    body: fd,
-  });
-  if (!r.ok) throw new Error(await r.text());
-  return r.json();
+async function apiForm(path, fd, { silent = false } = {}) {
+  if (!navigator.onLine) {
+    if (!silent) { _updateOfflineLabels(); showScreen('s-offline'); }
+    throw new Error('offline');
+  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+  try {
+    const r = await fetch(BASE_URL + path, {
+      method: 'POST',
+      headers: { 'X-Init-Data': initData },
+      body: fd,
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    if (r.status >= 500) {
+      if (!silent) _showServerError();
+      throw new Error(`server_error_${r.status}`);
+    }
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  } catch(e) {
+    clearTimeout(timer);
+    if (e.name === 'AbortError') { if (!silent) _showServerError(); throw new Error('timeout'); }
+    throw e;
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -931,6 +1108,14 @@ function toast(msg, ms=2200) {
 // ═══════════════════════════════════════════════
 async function init() {
   showScreen('s-loading');
+
+  // TASK 1: Check offline before anything
+  if (!navigator.onLine) {
+    _updateOfflineLabels();
+    showScreen('s-offline');
+    return;
+  }
+
   renderSubjectsGrid();
   renderShop();
   // BUG-017: graceful screen when opened outside Telegram
@@ -952,11 +1137,19 @@ async function init() {
     S.user = d.user;
     renderHome();
     loadMistakesCount();
+    updateStaticLabels();
     showScreen('s-home');
   } catch(e) {
     console.error(e);
-    toast('Bağlantı xətası');
-    showScreen('s-home');
+    if (e.message === 'offline') {
+      _updateOfflineLabels();
+      showScreen('s-offline');
+    } else if (e.message?.startsWith('server_error') || e.message === 'timeout') {
+      _showServerError();
+    } else {
+      toast('Bağlantı xətası');
+      showScreen('s-home');
+    }
   }
 }
 
@@ -1009,12 +1202,14 @@ function renderHome() {
   } catch(e) {}
 
   refreshHomeLimits();
+  // TASK 4: show continue button if saved exam exists
+  _checkContinueExam();
 }
 
 async function refreshHomeLimits() {
   if (!userId) return;
   try {
-    const d = await api(`/limits/${userId}`);
+    const d = await api(`/limits/${userId}`, null, {silent:true});
     document.getElementById('lim-exam').textContent = d.exam ?? '—';
     document.getElementById('lim-mini').textContent = d.mini ?? '—';
     document.getElementById('lim-duel').textContent = d.duel ?? '—';
@@ -1026,7 +1221,7 @@ async function loadMistakesCount() {
   const lang = S.user?.lang || 'az';
   const isRu = lang === 'ru';
   try {
-    const d = await api(`/mistakes/${userId}`);
+    const d = await api(`/mistakes/${userId}`, null, {silent:true});
     const n = (d.mistakes||[]).length;
     const sub  = document.getElementById('home-mistakes-sub');
     const badge = document.getElementById('home-mistakes-badge');
@@ -1053,6 +1248,11 @@ function isPremiumActive(u) {
 function renderSubjectsGrid() {
   const g = document.getElementById('subj-grid');
   if (!g) return;
+  // Show skeleton first if no user data yet
+  if (!S.user) {
+    g.innerHTML = skeletonSubjects();
+    return;
+  }
   g.innerHTML = Object.keys(SUBJECTS_AZ).map(code => `
     <div class="subj-card fu" onclick="selectSubject('${code}')">
       <div class="subj-icon">${SUBJ_ICONS[code]||'📗'}</div>
@@ -1166,6 +1366,9 @@ async function doStartTest(params) {
     S.startTime = Date.now();
     S.curOpts   = []; S.curCorrect = -1; S.curQType = 1;
 
+    // TASK 3: Save initial exam state
+    _saveExamToLocal();
+
     clearInterval(S.timerIv);
     if (params.type === 'sim') startTimer(3*60*60);
     else document.getElementById('exam-timer').style.display = 'none';
@@ -1276,20 +1479,23 @@ async function selectAnswer(idx) {
 
   if (isOk) {
     S.score++;
-    if (S.mode === 'mistakes') api('/remove_mistake', { user_id:userId, question_id: String(q.id||q.question||'') }).catch(()=>{});
+    if (S.mode === 'mistakes') api('/remove_mistake', { user_id:userId, question_id: String(q.id||q.question||'') }, {silent:true}).catch(()=>{});
   } else {
     if (S.mode === 'normal' || S.mode === 'simulation') {
       api('/add_mistake', { user_id:userId, question:{
         id: String(q.id||''), question:q.question,
         options: q.options, correct_index: q.correct_index,
         subject: q.subject||''
-      }}).catch(()=>{});
+      }}, {silent:true}).catch(()=>{});
     }
   }
 
+  // TASK 3: Autosave to localStorage after every answer
+  _saveExamToLocal();
+
   // save progress async
-  api('/save_progress', { user_id:userId, index:S.idx+1, score:S.score, subject:S.subject, mode:S.mode, answers_log:S.log }).catch(()=>{});
-  api('/activity', { user_id:userId }).catch(()=>{});
+  api('/save_progress', { user_id:userId, index:S.idx+1, score:S.score, subject:S.subject, mode:S.mode, answers_log:S.log }, {silent:true}).catch(()=>{});
+  api('/activity', { user_id:userId }, {silent:true}).catch(()=>{});
 
   setTimeout(() => {
     S.idx++;
@@ -1310,6 +1516,82 @@ function reportQ() {
 }
 
 // ═══════════════════════════════════════════════
+//  TASK 3 & 4 — EXAM AUTOSAVE (localStorage)
+// ═══════════════════════════════════════════════
+const EXAM_SAVE_KEY = 'current_exam';
+
+function _saveExamToLocal() {
+  if (!S.qs.length) return;
+  try {
+    const data = {
+      qs:        S.qs,
+      idx:       S.idx,
+      score:     S.score,
+      subject:   S.subject,
+      mode:      S.mode,
+      log:       S.log,
+      startTime: S.startTime,
+    };
+    localStorage.setItem(EXAM_SAVE_KEY, JSON.stringify(data));
+  } catch(e) { /* quota exceeded or private mode */ }
+}
+
+function _clearExamLocal() {
+  try { localStorage.removeItem(EXAM_SAVE_KEY); } catch(e) {}
+}
+
+function _loadExamFromLocal() {
+  try {
+    const raw = localStorage.getItem(EXAM_SAVE_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw);
+    if (!d || !d.qs || !d.qs.length) return null;
+    return d;
+  } catch(e) { return null; }
+}
+
+// TASK 4: Check and show continue button on home
+function _checkContinueExam() {
+  const saved = _loadExamFromLocal();
+  const wrap  = document.getElementById('continue-exam-wrap');
+  if (!wrap) return;
+  if (!saved) { wrap.style.display = 'none'; return; }
+  const lang = S.user?.lang || 'az';
+  const isRu = lang === 'ru';
+  const titleEl = document.getElementById('continue-exam-title');
+  const subEl   = document.getElementById('continue-exam-sub');
+  if (titleEl) titleEl.textContent = isRu ? 'Продолжить экзамен' : 'İmtahana davam et';
+  if (subEl) {
+    const done = saved.idx || 0;
+    const total = saved.qs.length;
+    const subj = saved.subject || '';
+    subEl.textContent = isRu
+      ? `${subj} · ${done}/${total} вопросов`
+      : `${subj} · ${done}/${total} sual`;
+  }
+  wrap.style.display = 'block';
+}
+
+function continueExam() {
+  const saved = _loadExamFromLocal();
+  if (!saved) { _checkContinueExam(); return; }
+  S.qs        = saved.qs;
+  S.idx       = saved.idx || 0;
+  S.score     = saved.score || 0;
+  S.subject   = saved.subject || '';
+  S.mode      = saved.mode || 'normal';
+  S.log       = saved.log || [];
+  S.startTime = saved.startTime || Date.now();
+  S.curOpts   = []; S.curCorrect = -1; S.curQType = 1;
+  clearInterval(S.timerIv);
+  if (S.mode === 'simulation') startTimer(3*60*60);
+  else document.getElementById('exam-timer').style.display = 'none';
+  S.stack = [];
+  showScreen('s-exam');
+  renderQ();
+}
+
+// ═══════════════════════════════════════════════
 //  FINISH
 // ═══════════════════════════════════════════════
 async function doFinish() {
@@ -1327,6 +1609,10 @@ async function doFinish() {
     });
     if (res.user) { S.user = res.user; }
   } catch {}
+
+  // TASK 3: Clear local autosave on finish
+  _clearExamLocal();
+  _checkContinueExam();
 
   // Update result UI
   document.getElementById('res-pct').textContent     = `${pct}%`;
@@ -1365,6 +1651,8 @@ async function doFinish() {
 
   S.stack = [];
   showScreen('s-result');
+  const circ = 339; // 2*π*54 ≈ 339
+  const offset = circ - (pct / 100) * circ;
   document.getElementById('res-arc').style.strokeDashoffset = String(circ); // reset before animate
   setTimeout(() => {
     const arc = document.getElementById('res-arc');
@@ -1442,12 +1730,16 @@ async function loadMistakes() {
         <div style="font-size:13px;color:var(--text2)">${isRu ? 'Ошибок нет' : 'Heç bir səhv yoxdur'}</div>
       </div>`;
       startBtn.style.display = 'none';
+      const sw = document.getElementById('mistakes-search-wrap');
+      if (sw) sw.style.display = 'none';
       return;
     }
 
     // Check premium
     const isPrem = isPremiumActive(S.user);
     if (!isPrem) {
+      const sw2 = document.getElementById('mistakes-search-wrap');
+      if (sw2) sw2.style.display = 'none';
       wrap.innerHTML = `<div class="card card-danger" style="text-align:center;padding:22px">
         <div style="font-size:32px;margin-bottom:8px">🔒</div>
         <div style="font-size:14px;font-weight:700;margin-bottom:6px">${isRu ? 'Функция Premium' : 'Premium funksiyası'}</div>
@@ -1464,6 +1756,15 @@ async function loadMistakes() {
     }
 
     startBtn.style.display = 'block';
+
+    // TASK 5: Show search bar when mistakes exist
+    const searchWrap = document.getElementById('mistakes-search-wrap');
+    if (searchWrap) {
+      searchWrap.style.display = ms.length > 3 ? 'block' : 'none';
+      const searchInput = document.getElementById('mistakes-search-input');
+      if (searchInput) { searchInput.value = ''; }
+    }
+
     wrap.innerHTML = ms.map((m,i) => {
       const qid = String(m.id || m.question || i);
       const userAns = m.user_text || '—';
@@ -1495,6 +1796,61 @@ async function loadMistakes() {
     wrap.innerHTML = '<div class="card card-danger"><p>Yüklənmə xətası</p></div>';
     document.getElementById('start-mistakes-btn-wrap').style.display = 'none';
   }
+}
+
+// TASK 5: Client-side search/filter for mistakes
+function filterMistakes(query) {
+  const q = (query || '').toLowerCase().trim();
+  const ms = S.savedMistakes || [];
+  const isRu = (S.user?.lang || 'az') === 'ru';
+  const wrap = document.getElementById('mistakes-content');
+  if (!wrap) return;
+
+  const filtered = q
+    ? ms.filter(m => {
+        const qText    = (m.question_text || m.question || '').toLowerCase();
+        const subject  = (SUBJECTS()[m.subject] || m.subject || '').toLowerCase();
+        const rawSubj  = (m.subject || '').toLowerCase();
+        return qText.includes(q) || subject.includes(q) || rawSubj.includes(q);
+      })
+    : ms;
+
+  if (!filtered.length) {
+    wrap.innerHTML = `<div class="card" style="text-align:center;padding:22px">
+      <div style="font-size:32px;margin-bottom:8px">🔍</div>
+      <div style="font-size:14px;font-weight:700">${isRu ? 'Ничего не найдено' : 'Nəticə tapılmadı'}</div>
+    </div>`;
+    return;
+  }
+
+  wrap.innerHTML = filtered.map((m,i) => {
+    const realIdx = ms.indexOf(m);
+    const qid = String(m.id || m.question || realIdx);
+    const userAns    = m.user_text    || '—';
+    const correctAns = m.correct_text || '—';
+    const qText      = m.question_text || m.question || '';
+    return `
+    <div class="card fu" style="animation-delay:${i*.03}s;margin-bottom:8px" id="mk-${realIdx}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;cursor:pointer" onclick="toggleMistakeCard(${realIdx})">
+        <div style="flex:1">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">${isRu ? 'Вопрос' : 'Sual'} #${realIdx+1} · <span style="color:var(--mint)">${SUBJECTS()[m.subject]||m.subject||'—'}</span></div>
+          <div style="font-size:13px;line-height:1.55;font-weight:500">${escHtml(qText)}</div>
+        </div>
+        <div style="flex-shrink:0;color:var(--text3);font-size:18px;margin-top:2px" id="mk-arr-${realIdx}">▼</div>
+      </div>
+      <div id="mk-body-${realIdx}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+        <div style="margin-bottom:7px">
+          <div style="font-size:10px;font-weight:700;color:var(--danger);text-transform:uppercase;margin-bottom:3px">👤 ${isRu ? 'Мой ответ' : 'Mənim cavabım'}</div>
+          <div style="font-size:13px;color:var(--text);background:rgba(224,85,85,.07);border:1px solid rgba(224,85,85,.2);border-radius:8px;padding:8px 10px;line-height:1.5">${escHtml(userAns)}</div>
+        </div>
+        <div style="margin-bottom:10px">
+          <div style="font-size:10px;font-weight:700;color:var(--correct);text-transform:uppercase;margin-bottom:3px">✅ ${isRu ? 'Правильный ответ' : 'Düzgün cavab'}</div>
+          <div style="font-size:13px;color:var(--text);background:rgba(58,170,122,.07);border:1px solid rgba(58,170,122,.2);border-radius:8px;padding:8px 10px;line-height:1.5">${escHtml(correctAns)}</div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="deleteSingleMistake(event,'${escHtml(qid)}',${realIdx})">🗑 ${isRu ? 'Удалить' : 'Sil'}</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function toggleMistakeCard(i) {
@@ -1639,7 +1995,7 @@ async function downloadFile(fileId) {
 // ═══════════════════════════════════════════════
 async function loadTop() {
   const wrap = document.getElementById('top-list');
-  wrap.innerHTML = '<div class="spinner"></div>';
+  wrap.innerHTML = skeletonLeaderboard();
   try {
     const d = await api('/top');
     const ls = d.leaders || [];
@@ -1665,7 +2021,7 @@ async function loadTop() {
 // ═══════════════════════════════════════════════
 async function loadProfile() {
   const wrap = document.getElementById('profile-content');
-  wrap.innerHTML = '<div class="spinner"></div>';
+  wrap.innerHTML = skeletonProfile();
   try {
     const d = await api(`/profile/${userId}`);
     const u = d.user; S.user = u;
@@ -1813,7 +2169,78 @@ function setLang(lang) {
   renderHome();
   renderSubjectsGrid();
   loadProfile();
+  updateStaticLabels();
   toast(lang==='ru' ? '🇷🇺 Русский выбран' : '🇦🇿 Azərbaycanca seçildi');
+}
+
+function t(az, ru) {
+  return (S.user?.lang || 'az') === 'ru' ? ru : az;
+}
+
+function updateStaticLabels() {
+  // s-subjects
+  const subjTitle = document.querySelector('#s-subjects .topbar-title');
+  const subjSub   = document.querySelector('#s-subjects .topbar-sub');
+  if (subjTitle) subjTitle.textContent = t('Fənn Testləri', 'Предметы');
+  if (subjSub)   subjSub.textContent   = t('Fənn seçin', 'Выберите предмет');
+
+  // s-subject-mode
+  const subjModeTitle = document.querySelector('#s-subject-mode .topbar-sub');
+  if (subjModeTitle) subjModeTitle.textContent = t('Test növü', 'Тип теста');
+
+  // s-exam-type
+  const examTypeTitle = document.querySelector('#s-exam-type .topbar-title');
+  const examTypeSub   = document.querySelector('#s-exam-type .topbar-sub');
+  if (examTypeTitle) examTypeTitle.textContent = t('İmtahan', 'Экзамен');
+  if (examTypeSub)   examTypeSub.textContent   = t('Format seçin', 'Выберите формат');
+
+  // s-result buttons
+  const repeatBtn = document.querySelector('#s-result .btn-row .btn-primary');
+  const menuBtn   = document.querySelector('#s-result .btn-row .btn-secondary');
+  const newTestBtn= document.querySelector('#s-result .btn-outline');
+  if (repeatBtn)  repeatBtn.textContent  = t('🔁 Təkrar', '🔁 Повтор');
+  if (menuBtn)    menuBtn.textContent    = t('🏠 Menyu', '🏠 Меню');
+  if (newTestBtn) newTestBtn.textContent = t('📚 Yeni test', '📚 Новый тест');
+
+  // s-shop
+  const shopTitle = document.querySelector('#s-shop .topbar-title');
+  const shopSub   = document.querySelector('#s-shop .topbar-sub');
+  if (shopTitle) shopTitle.textContent = t('🛍 Mağaza', '🛍 Магазин');
+  if (shopSub)   shopSub.textContent   = t('Paket seçin', 'Выберите пакет');
+
+  // s-duel
+  const duelSub = document.querySelector('#s-duel .topbar-sub');
+  if (duelSub) duelSub.textContent = t('PvP Rəqabət', 'PvP Соревнование');
+
+  // s-profile title
+  const profTitle = document.querySelector('#s-profile > div:first-child > div:first-child');
+  if (profTitle) profTitle.textContent = t('👤 Kabinet', '👤 Кабинет');
+
+  // s-top title
+  const topTitle = document.querySelector('#s-top > div:first-child > div:first-child');
+  if (topTitle) topTitle.textContent = t('🏆 TOP-20', '🏆 ТОП-20');
+
+  // Bottom nav labels — home
+  document.querySelectorAll('#bnav-home .bnav-item').forEach((el, i) => {
+    const svg = el.querySelector('svg');
+    if (i === 0) { el.textContent = ''; if(svg) el.appendChild(svg); el.appendChild(document.createTextNode(t('Ana', 'Главная'))); }
+    if (i === 1) { el.textContent = ''; if(svg) el.appendChild(svg); el.appendChild(document.createTextNode('TOP')); }
+    if (i === 2) { el.textContent = ''; if(svg) el.appendChild(svg); el.appendChild(document.createTextNode(t('Kabinet', 'Кабинет'))); }
+  });
+  // Bottom nav — top screen
+  document.querySelectorAll('#s-top .bnav-item').forEach((el, i) => {
+    const svg = el.querySelector('svg');
+    if (i === 0) { el.textContent = ''; if(svg) el.appendChild(svg); el.appendChild(document.createTextNode(t('Ana', 'Главная'))); }
+    if (i === 1) { el.textContent = ''; if(svg) el.appendChild(svg); el.appendChild(document.createTextNode('TOP')); }
+    if (i === 2) { el.textContent = ''; if(svg) el.appendChild(svg); el.appendChild(document.createTextNode(t('Kabinet', 'Кабинет'))); }
+  });
+  // Bottom nav — profile screen
+  document.querySelectorAll('#s-profile .bnav-item').forEach((el, i) => {
+    const svg = el.querySelector('svg');
+    if (i === 0) { el.textContent = ''; if(svg) el.appendChild(svg); el.appendChild(document.createTextNode(t('Ana', 'Главная'))); }
+    if (i === 1) { el.textContent = ''; if(svg) el.appendChild(svg); el.appendChild(document.createTextNode('TOP')); }
+    if (i === 2) { el.textContent = ''; if(svg) el.appendChild(svg); el.appendChild(document.createTextNode(t('Kabinet', 'Кабинет'))); }
+  });
 }
 
 function shareRef(link) {
@@ -1884,7 +2311,21 @@ async function createDuel() {
     if (d.ok && d.link) {
       toast('✅ Duel yaradıldı!');
       shareDuelLink(d.link);
-      loadDuelHub();
+      if (d.questions && d.questions.length) {
+        S.qs = d.questions;
+        S.idx = 0;
+        S.score = 0;
+        S.mode = 'duel';
+        S.subject = 'Duel';
+        S.log = [];
+        S.startTime = Date.now();
+        S.stack = []; clearInterval(S.timerIv);
+        document.getElementById('exam-timer').style.display = 'none';
+        showScreen('s-exam');
+        renderQ();
+      } else {
+        loadDuelHub();
+      }
     } else toast('❌ ' + (d.error||'Xəta'));
   } catch { toast('Bağlantı xətası'); }
 }
@@ -1932,11 +2373,18 @@ function renderShop() {
   const packWrap  = document.getElementById('product-list-packs');
   if (!premWrap || !packWrap) return;
 
+  // Show skeletons immediately
+  premWrap.innerHTML = skeletonShop();
+  packWrap.innerHTML = skeletonShop();
+
   const premKeys  = ['month','week'];
   const packKeys  = ['pack_mini','pack_exam'];
 
-  premWrap.innerHTML = premKeys.map(k => productCard(k)).join('');
-  packWrap.innerHTML = packKeys.map(k => productCard(k)).join('');
+  // Small timeout so skeleton is visible, then render real content
+  setTimeout(() => {
+    premWrap.innerHTML = premKeys.map(k => productCard(k)).join('');
+    packWrap.innerHTML = packKeys.map(k => productCard(k)).join('');
+  }, 80);
 }
 
 function productCard(key) {
@@ -1949,7 +2397,6 @@ function productCard(key) {
     </div>
     <div>
       <div class="product-price">${p.price}</div>
-      <div style="font-size:10px;color:var(--text3);text-align:right">${p.stars} ⭐</div>
     </div>
   </div>`;
 }
@@ -1974,18 +2421,6 @@ function payCard() {
   document.getElementById('card-plan-label').textContent = p.name;
   document.getElementById('card-price-label').textContent = p.price;
   goTo('s-pay-card');
-}
-
-async function payStars() {
-  if (!S.selPlan) { toast('Paket seçin'); return; }
-  tg?.HapticFeedback?.impactOccurred('medium');
-  try {
-    const d = await api('/create_invoice', { user_id:userId, plan_code:S.selPlan });
-    if (d.invoice_url) tg?.openLink?.(d.invoice_url);
-    else toast('Stars ödənişi botdan mümkündür');
-  } catch {
-    toast('Stars ödənişi üçün botda /start yazın → Kabinet → Premium al');
-  }
 }
 
 function copyCard() {
@@ -2030,8 +2465,60 @@ async function sendReceipt() {
 }
 
 // ═══════════════════════════════════════════════
-//  UTILS
+//  SKELETON HELPERS
 // ═══════════════════════════════════════════════
+function skeletonProfile() {
+  return `
+    <div class="skel-card">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px 0">
+        <div class="skeleton" style="width:68px;height:68px;border-radius:50%"></div>
+        <div class="skeleton skel-block h-lg w-50"></div>
+        <div class="skeleton skel-block h-sm w-40"></div>
+      </div>
+    </div>
+    <div class="skel-card">
+      ${[1,2,3,4,5].map(()=>`<div class="skeleton skel-block" style="margin-bottom:12px"></div>`).join('')}
+    </div>
+    <div class="skel-card">
+      <div class="skeleton skel-block w-70"></div>
+      <div class="skeleton skel-block h-xl" style="margin-top:8px"></div>
+    </div>`;
+}
+
+function skeletonSubjects() {
+  return `<div class="subj-grid">
+    ${[1,2,3,4,5,6,7,8].map(()=>`
+      <div class="skel-card" style="padding:13px 11px">
+        <div class="skeleton" style="width:30px;height:30px;border-radius:8px;margin-bottom:8px"></div>
+        <div class="skeleton skel-block h-sm w-70"></div>
+        <div class="skeleton skel-block h-sm w-50"></div>
+      </div>`).join('')}
+  </div>`;
+}
+
+function skeletonShop() {
+  return `
+    ${[1,2].map(()=>`
+      <div class="skel-card" style="display:flex;align-items:center;gap:12px">
+        <div class="skeleton" style="width:44px;height:44px;border-radius:var(--r-s);flex-shrink:0"></div>
+        <div style="flex:1">
+          <div class="skeleton skel-block w-70"></div>
+          <div class="skeleton skel-block h-sm w-50"></div>
+        </div>
+        <div class="skeleton skel-block w-40" style="height:24px"></div>
+      </div>`).join('')}`;
+}
+
+function skeletonLeaderboard() {
+  return `
+    ${[1,2,3,4,5,6].map((i)=>`
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)">
+        <div class="skeleton" style="width:26px;height:22px;border-radius:6px;flex-shrink:0"></div>
+        <div class="skeleton" style="width:34px;height:34px;border-radius:50%;flex-shrink:0"></div>
+        <div style="flex:1"><div class="skeleton skel-block w-70" style="margin-bottom:0"></div></div>
+        <div class="skeleton skel-block w-40" style="height:18px;margin-bottom:0"></div>
+      </div>`).join('')}`;
+}
 function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
