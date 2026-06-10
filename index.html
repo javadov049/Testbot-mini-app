@@ -429,6 +429,43 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
 </div>
 
 <!-- ══════════════════════════════════════
+     SUBJECT MODE (mini / by-topic)
+══════════════════════════════════════ -->
+<div class="screen hidden" id="s-subject-mode">
+  <div class="topbar">
+    <div class="topbar-back" onclick="goBack()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="var(--text)" stroke-width="2.2" stroke-linecap="round"/></svg>
+    </div>
+    <div><div class="topbar-title" id="subj-mode-title">Fənn</div><div class="topbar-sub">Test növü seçin</div></div>
+  </div>
+  <div class="scroll" style="padding-top:10px">
+    <div class="qa-card" onclick="startSubjectMini()">
+      <div class="qa-icon">🎲</div>
+      <div class="qa-text"><div class="qa-title" id="subj-mode-mini-lbl">Mini-test (15 sual)</div><div class="qa-sub" id="subj-mode-mini-sub">Qarışıq suallar</div></div>
+    </div>
+    <div class="qa-card" id="subj-mode-topics-card" onclick="goTo('s-topics')" style="display:none">
+      <div class="qa-icon">📚</div>
+      <div class="qa-text"><div class="qa-title" id="subj-mode-topics-lbl">Mövzu üzrə test</div><div class="qa-sub" id="subj-mode-topics-sub">Mövzu seçin</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     TOPICS LIST
+══════════════════════════════════════ -->
+<div class="screen hidden" id="s-topics">
+  <div class="topbar">
+    <div class="topbar-back" onclick="goBack()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="var(--text)" stroke-width="2.2" stroke-linecap="round"/></svg>
+    </div>
+    <div><div class="topbar-title" id="topics-title">Mövzular</div><div class="topbar-sub" id="topics-sub">Mövzu seçin</div></div>
+  </div>
+  <div class="scroll" style="padding-top:10px">
+    <div id="topics-list"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
      EXAM TYPE SELECT
 ══════════════════════════════════════ -->
 <div class="screen hidden" id="s-exam-type">
@@ -557,10 +594,13 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
     <div><div class="topbar-title">Mənim Səhvlərim</div><div class="topbar-sub" id="mistakes-sub">yüklənir...</div></div>
   </div>
   <div class="scroll" style="padding-top:10px">
-    <div id="mistakes-content"><div class="spinner"></div></div>
-    <div id="start-mistakes-btn-wrap" style="display:none;margin-top:8px">
-      <button class="btn btn-primary" onclick="startMistakesExam()">🧠 Səhvlər üzərində iş başla</button>
+    <div id="start-mistakes-btn-wrap" style="display:none;margin-bottom:10px">
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="startMistakesExam()">🧠 Səhvlər üzərində iş</button>
+        <button class="btn btn-danger btn-sm" style="width:auto;padding:14px 16px" onclick="confirmClearMistakes()" title="Bütün səhvləri sil">🗑</button>
+      </div>
     </div>
+    <div id="mistakes-content"><div class="spinner"></div></div>
   </div>
 </div>
 
@@ -572,19 +612,11 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
     <div class="topbar-back" onclick="goBack()">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="var(--text)" stroke-width="2.2" stroke-linecap="round"/></svg>
     </div>
-    <div><div class="topbar-title">Fayllar</div><div class="topbar-sub">Dərs materialları</div></div>
+    <div><div class="topbar-title" id="files-title">Fayllar</div><div class="topbar-sub" id="files-sub">Dərs materialları</div></div>
   </div>
   <div class="scroll" style="padding-top:10px">
-    <div id="files-content">
-      <div class="card" style="text-align:center;padding:28px">
-        <div style="font-size:36px;margin-bottom:10px">🗂</div>
-        <div style="font-size:14px;font-weight:600;margin-bottom:6px">Fayllar bota bağlıdır</div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Materialları botdan yükləmək daha rahatdır</div>
-        <a href="https://t.me/rezidentbot" style="text-decoration:none">
-          <button class="btn btn-primary btn-sm">Bota keç</button>
-        </a>
-      </div>
-    </div>
+    <div class="subj-grid" id="files-subj-grid" style="margin-bottom:10px"></div>
+    <div id="files-content"><div class="spinner"></div></div>
   </div>
 </div>
 
@@ -748,7 +780,7 @@ const BASE_URL = (()=>{
   // ───────────────────────────────────────────────────────────────────
   const fromMeta = document.querySelector('meta[name="api-url"]')?.content;
   if (fromMeta && fromMeta !== '__API_URL__') return fromMeta;
-  return 'https://testbot-mini.onrender.com';  // <-- ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL
+  return 'https://YOUR_SERVER_URL';  // <-- ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL
 })();
 
 const CARD_NUMBER = '5522 0993 5658 0951';
@@ -856,6 +888,8 @@ function goTo(id, noStack) {
   if (id === 's-subjects') renderSubjectsGrid();
   if (id === 's-mistakes') loadMistakes();
   if (id === 's-shop')     renderShop();
+  if (id === 's-files')    loadFiles();
+  if (id === 's-topics')   loadTopicsList();
 }
 function goBack() {
   if (S.stack.length) {
@@ -932,12 +966,13 @@ async function init() {
 function renderHome() {
   const u = S.user; if (!u) return;
   const name = u.name || 'Həkim';
-  document.getElementById('hero-name').textContent = `Salam, ${name}! 👋`;
+  const lang = u.lang || 'az';
+  const isRu = lang === 'ru';
+  document.getElementById('hero-name').textContent = isRu ? `Привет, ${name}! 👋` : `Salam, ${name}! 👋`;
   const isPrem = isPremiumActive(u);
-  const _hl = u.lang||'az'; const _hr = _hl==='ru';
   document.getElementById('hero-sub').innerHTML = isPrem
-    ? `<span class="badge badge-mint">💎 PREMIUM ${_hr?'активен':'aktiv'}</span>`
-    : `<span class="badge badge-gray">${_hr?'Базовый план':'Start plan'}</span>`;
+    ? `<span class="badge badge-mint">💎 PREMIUM ${isRu?'активен':'aktiv'}</span>`
+    : `<span class="badge badge-gray">${isRu?'Базовый план':'Start plan'}</span>`;
 
   const streak = u.streak || {};
   const stats  = u.stats  || {};
@@ -945,10 +980,34 @@ function renderHome() {
   const td  = stats.today_solved || 0;
   const goal = stats.daily_goal || 30;
   const pct = Math.min(100, Math.round(td/goal*100));
-  const _sl = S.user?.lang||'az'; const _sr = _sl==='ru';
-  document.getElementById('streak-text').textContent = _sr ? `${cur} дней подряд` : `${cur} gün seriya`;
-  document.getElementById('streak-goal').textContent = _sr ? `Цель на сегодня: ${td}/${goal}` : `Bugünkü hədəf: ${td}/${goal}`;
+  document.getElementById('streak-text').textContent = isRu ? `${cur} дней подряд` : `${cur} gün seriya`;
+  document.getElementById('streak-goal').textContent = isRu ? `Цель на сегодня: ${td}/${goal}` : `Bugünkü hədəf: ${td}/${goal}`;
   document.getElementById('streak-pct').textContent  = `${pct}%`;
+
+  // Update home card labels with current language
+  const homeLabels = {
+    subj:      isRu ? ['Тесты по предметам','Выбрать предмет → 15 вопросов'] : ['Fənn Testləri','Fənn seç → 15 sual'],
+    sim:       isRu ? ['Симуляция экзамена','Настоящий формат DİM — 3 часа']  : ['İmtahan Simulyasiyası','Real DİM formatı — 3 saat'],
+    mistakes:  isRu ? ['Работа над ошибками','...']                           : ['Səhvlər üzərində iş','...'],
+    duel:      isRu ? ['Дуэль','Сразись с другом']                            : ['Duel','Dostunla rəqabət et'],
+    files:     isRu ? ['Файлы','Учебные материалы']                           : ['Fayllar','Dərs materialları'],
+  };
+  try {
+    const cards = document.querySelectorAll('#s-home .qa-card');
+    const setCard = (card, lbl) => {
+      if (!card) return;
+      const t = card.querySelector('.qa-title'), s = card.querySelector('.qa-sub');
+      if (t) t.textContent = lbl[0];
+      // only set sub if it has no dynamic id (mistakes sub is dynamic)
+      if (s && !s.id) s.textContent = lbl[1];
+    };
+    if (cards[0]) setCard(cards[0], homeLabels.subj);
+    if (cards[1]) setCard(cards[1], homeLabels.sim);
+    if (cards[2]) setCard(cards[2], homeLabels.mistakes);
+    if (cards[3]) setCard(cards[3], homeLabels.duel);
+    if (cards[4]) setCard(cards[4], homeLabels.files);
+  } catch(e) {}
+
   refreshHomeLimits();
 }
 
@@ -964,16 +1023,22 @@ async function refreshHomeLimits() {
 
 async function loadMistakesCount() {
   if (!userId) return;
+  const lang = S.user?.lang || 'az';
+  const isRu = lang === 'ru';
   try {
     const d = await api(`/mistakes/${userId}`);
     const n = (d.mistakes||[]).length;
     const sub  = document.getElementById('home-mistakes-sub');
     const badge = document.getElementById('home-mistakes-badge');
-    sub.textContent = n > 0 ? `${n} sual gözləyir` : 'Səhv yoxdur';
+    sub.textContent = n > 0
+      ? `${n} ${isRu ? 'вопросов ждёт' : 'sual gözləyir'}`
+      : (isRu ? 'Ошибок нет' : 'Səhv yoxdur');
     if (n > 0) { badge.textContent = String(n); badge.style.display = 'inline-flex'; }
+    else badge.style.display = 'none';
     S.savedMistakes = d.mistakes || [];
   } catch {
-    document.getElementById('home-mistakes-sub').textContent = 'Yüklənmə xətası';
+    const sub = document.getElementById('home-mistakes-sub');
+    if (sub) sub.textContent = isRu ? 'Ошибка загрузки' : 'Yüklənmə xətası';
   }
 }
 
@@ -997,10 +1062,79 @@ function renderSubjectsGrid() {
 
 async function selectSubject(code) {
   tg?.HapticFeedback?.impactOccurred('light');
+  S.selectedSubjectCode = code;
   S.subject = SUBJECTS()[code] || code;
-  S.mode    = 'normal';
+  // Show mode screen — check if topics exist
+  const lang = S.user?.lang || 'az';
+  const isRu = lang === 'ru';
+  document.getElementById('subj-mode-title').textContent = SUBJECTS()[code] || code;
+  document.getElementById('subj-mode-mini-lbl').textContent = isRu ? 'Мини-тест (15 вопросов)' : 'Mini-test (15 sual)';
+  document.getElementById('subj-mode-mini-sub').textContent = isRu ? 'Случайные вопросы' : 'Qarışıq suallar';
+  document.getElementById('subj-mode-topics-lbl').textContent = isRu ? 'По темам' : 'Mövzu üzrə test';
+  document.getElementById('subj-mode-topics-sub').textContent = isRu ? 'Выбрать тему' : 'Mövzu seçin';
+  document.getElementById('subj-mode-topics-card').style.display = 'none';
+  goTo('s-subject-mode');
+  // async check topics
+  try {
+    const d = await api(`/topics/${code}?lang=${lang}`);
+    if ((d.topics||[]).length > 0) {
+      S.currentTopics = d.topics;
+      document.getElementById('subj-mode-topics-card').style.display = '';
+    }
+  } catch(e) {}
+}
+
+function startSubjectMini() {
+  const code = S.selectedSubjectCode;
+  if (!code) return;
+  S.mode = 'normal';
   S.lastParams = { type:'mini', subject:code };
-  await doStartTest({ type:'mini', subject:code });
+  doStartTest({ type:'mini', subject:code });
+}
+
+async function loadTopicsList() {
+  const code = S.selectedSubjectCode;
+  const lang = S.user?.lang || 'az';
+  const wrap = document.getElementById('topics-list');
+  const isRu = lang === 'ru';
+  document.getElementById('topics-title').textContent = SUBJECTS()[code] || code;
+  document.getElementById('topics-sub').textContent = isRu ? 'Выберите тему' : 'Mövzu seçin';
+  if (S.currentTopics && S.currentTopics.length) {
+    renderTopicsList(S.currentTopics, isRu);
+    return;
+  }
+  wrap.innerHTML = '<div class="spinner"></div>';
+  try {
+    const d = await api(`/topics/${code}?lang=${lang}`);
+    S.currentTopics = d.topics || [];
+    if (!S.currentTopics.length) {
+      wrap.innerHTML = `<div class="card" style="text-align:center;padding:28px;color:var(--text2)">${isRu?'Темы не найдены':'Mövzu tapılmadı'}</div>`;
+      return;
+    }
+    renderTopicsList(S.currentTopics, isRu);
+  } catch(e) {
+    wrap.innerHTML = '<div class="card card-danger"><p>Yüklənmə xətası</p></div>';
+  }
+}
+
+function renderTopicsList(topics, isRu) {
+  const wrap = document.getElementById('topics-list');
+  wrap.innerHTML = topics.map((t,i) => `
+    <div class="card fu" style="animation-delay:${i*.03}s;cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:13px 14px;margin-bottom:8px" onclick="startTopicTest('${t.topic_id}','${escHtml(t.name||'')}')">
+      <div>
+        <div style="font-size:14px;font-weight:700;line-height:1.4">${escHtml(t.name||'')}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">${t.question_count||0} ${isRu?'вопросов':'sual'}</div>
+      </div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="var(--text3)" stroke-width="2" stroke-linecap="round"/></svg>
+    </div>`).join('');
+}
+
+async function startTopicTest(topicId, topicName) {
+  tg?.HapticFeedback?.impactOccurred('medium');
+  S.subject = topicName;
+  S.mode = 'normal';
+  S.lastParams = { type:'topic', topic_id:topicId };
+  await doStartTest({ type:'topic', topic_id:topicId });
 }
 
 // ═══════════════════════════════════════════════
@@ -1291,19 +1425,21 @@ function renderReviewCard() {
 async function loadMistakes() {
   const wrap = document.getElementById('mistakes-content');
   const sub  = document.getElementById('mistakes-sub');
+  const lang = S.user?.lang || 'az';
+  const isRu = lang === 'ru';
   wrap.innerHTML = '<div class="spinner"></div>';
   try {
     const d = await api(`/mistakes/${userId}`);
     const ms = d.mistakes || [];
     S.savedMistakes = ms;
-    sub.textContent = `${ms.length} sual`;
+    sub.textContent = `${ms.length} ${isRu ? 'вопросов' : 'sual'}`;
     const startBtn = document.getElementById('start-mistakes-btn-wrap');
 
     if (!ms.length) {
       wrap.innerHTML = `<div class="card" style="text-align:center;padding:28px">
         <div style="font-size:36px;margin-bottom:10px">✅</div>
-        <div style="font-size:14px;font-weight:700;margin-bottom:4px">Əla!</div>
-        <div style="font-size:13px;color:var(--text2)">Heç bir səhv yoxdur</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px">${isRu ? 'Отлично!' : 'Əla!'}</div>
+        <div style="font-size:13px;color:var(--text2)">${isRu ? 'Ошибок нет' : 'Heç bir səhv yoxdur'}</div>
       </div>`;
       startBtn.style.display = 'none';
       return;
@@ -1314,13 +1450,13 @@ async function loadMistakes() {
     if (!isPrem) {
       wrap.innerHTML = `<div class="card card-danger" style="text-align:center;padding:22px">
         <div style="font-size:32px;margin-bottom:8px">🔒</div>
-        <div style="font-size:14px;font-weight:700;margin-bottom:6px">Premium funksiyası</div>
-        <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Səhvlər üzərində iş yalnız Premium istifadəçilər üçündür</div>
-        <button class="btn btn-primary btn-sm" onclick="goTo('s-shop')">💎 Premium al</button>
+        <div style="font-size:14px;font-weight:700;margin-bottom:6px">${isRu ? 'Функция Premium' : 'Premium funksiyası'}</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:14px">${isRu ? 'Работа над ошибками только для Premium' : 'Səhvlər üzərində iş yalnız Premium istifadəçilər üçündür'}</div>
+        <button class="btn btn-primary btn-sm" onclick="goTo('s-shop')">💎 Premium ${isRu ? 'купить' : 'al'}</button>
       </div>
       ${ms.slice(0,5).map((m,i) => `
       <div class="card" style="opacity:.5">
-        <div style="font-size:11px;color:var(--text3);margin-bottom:5px">Sual #${i+1}</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:5px">${isRu ? 'Вопрос' : 'Sual'} #${i+1}</div>
         <div style="font-size:13px;filter:blur(4px)">Məzmun gizlədildi...</div>
       </div>`).join('')}`;
       startBtn.style.display = 'none';
@@ -1328,18 +1464,64 @@ async function loadMistakes() {
     }
 
     startBtn.style.display = 'block';
-    wrap.innerHTML = ms.map((m,i) => `
-      <div class="card fu" style="animation-delay:${i*.03}s;margin-bottom:8px">
-        <div style="font-size:11px;color:var(--text3);margin-bottom:5px">Sual #${i+1} · ${SUBJECTS()[m.subject]||m.subject||'—'}</div>
-        <div style="font-size:13px;line-height:1.55;margin-bottom:9px">${escHtml(m.question_text||m.question||'')}</div>
-        <div style="display:flex;flex-direction:column;gap:5px">
-          <span class="badge badge-danger">👤 ${escHtml((m.user_text||'—').substring(0,60))}</span>
-          <span class="badge badge-mint">✅ ${escHtml((m.correct_text||'—').substring(0,60))}</span>
+    wrap.innerHTML = ms.map((m,i) => {
+      const qid = String(m.id || m.question || i);
+      const userAns = m.user_text || '—';
+      const correctAns = m.correct_text || '—';
+      const qText = m.question_text || m.question || '';
+      return `
+      <div class="card fu" style="animation-delay:${i*.03}s;margin-bottom:8px" id="mk-${i}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;cursor:pointer" onclick="toggleMistakeCard(${i})">
+          <div style="flex:1">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px">${isRu ? 'Вопрос' : 'Sual'} #${i+1} · <span style="color:var(--mint)">${SUBJECTS()[m.subject]||m.subject||'—'}</span></div>
+            <div style="font-size:13px;line-height:1.55;font-weight:500">${escHtml(qText)}</div>
+          </div>
+          <div style="flex-shrink:0;color:var(--text3);font-size:18px;margin-top:2px" id="mk-arr-${i}">▼</div>
         </div>
-      </div>`).join('');
+        <div id="mk-body-${i}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+          <div style="margin-bottom:7px">
+            <div style="font-size:10px;font-weight:700;color:var(--danger);text-transform:uppercase;margin-bottom:3px">👤 ${isRu ? 'Мой ответ' : 'Mənim cavabım'}</div>
+            <div style="font-size:13px;color:var(--text);background:rgba(224,85,85,.07);border:1px solid rgba(224,85,85,.2);border-radius:8px;padding:8px 10px;line-height:1.5">${escHtml(userAns)}</div>
+          </div>
+          <div style="margin-bottom:10px">
+            <div style="font-size:10px;font-weight:700;color:var(--correct);text-transform:uppercase;margin-bottom:3px">✅ ${isRu ? 'Правильный ответ' : 'Düzgün cavab'}</div>
+            <div style="font-size:13px;color:var(--text);background:rgba(58,170,122,.07);border:1px solid rgba(58,170,122,.2);border-radius:8px;padding:8px 10px;line-height:1.5">${escHtml(correctAns)}</div>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="deleteSingleMistake(event,'${escHtml(qid)}',${i})">🗑 ${isRu ? 'Удалить' : 'Sil'}</button>
+        </div>
+      </div>`;
+    }).join('');
   } catch(e) {
     wrap.innerHTML = '<div class="card card-danger"><p>Yüklənmə xətası</p></div>';
     document.getElementById('start-mistakes-btn-wrap').style.display = 'none';
+  }
+}
+
+function toggleMistakeCard(i) {
+  const body = document.getElementById(`mk-body-${i}`);
+  const arr  = document.getElementById(`mk-arr-${i}`);
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (arr) arr.textContent = open ? '▼' : '▲';
+}
+
+async function deleteSingleMistake(e, qid, idx) {
+  e.stopPropagation();
+  const lang = S.user?.lang || 'az';
+  const isRu = lang === 'ru';
+  try {
+    await api('/remove_mistake', { user_id: userId, question_id: qid });
+    if (S.savedMistakes) S.savedMistakes.splice(idx, 1);
+    const card = document.getElementById(`mk-${idx}`);
+    if (card) card.remove();
+    const sub = document.getElementById('mistakes-sub');
+    const rem = (S.savedMistakes||[]).length;
+    if (sub) sub.textContent = `${rem} ${isRu ? 'вопросов' : 'sual'}`;
+    if (rem === 0) loadMistakes();
+    loadMistakesCount();
+  } catch(e2) {
+    toast('Xəta');
   }
 }
 
@@ -1349,6 +1531,107 @@ async function startMistakesExam() {
   tg?.HapticFeedback?.impactOccurred('medium');
   S.lastParams = { type:'mistakes' };
   await doStartTest({ type:'mistakes' });
+}
+
+async function confirmClearMistakes() {
+  const lang = S.user?.lang || 'az';
+  const isRu = lang === 'ru';
+  const msg = isRu ? 'Удалить все ошибки?' : 'Bütün səhvləri silmək istəyirsiniz?';
+  if (!confirm(msg)) return;
+  tg?.HapticFeedback?.impactOccurred('heavy');
+  try {
+    const ms = S.savedMistakes || [];
+    for (const m of ms) {
+      const qid = String(m.id || m.question || '');
+      if (qid) await api('/remove_mistake', { user_id: userId, question_id: qid }).catch(()=>{});
+    }
+    S.savedMistakes = [];
+    toast(isRu ? '🗑 Все ошибки удалены' : '🗑 Bütün səhvlər silindi');
+    loadMistakes();
+    loadMistakesCount();
+  } catch(e) {
+    toast(isRu ? 'Ошибка при удалении' : 'Silinmə xətası');
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  FILES
+// ═══════════════════════════════════════════════
+let _filesSubject = '';
+async function loadFiles(subject) {
+  const lang = S.user?.lang || 'az';
+  const isRu = lang === 'ru';
+  _filesSubject = subject || '';
+  const wrap = document.getElementById('files-content');
+  const grid = document.getElementById('files-subj-grid');
+  const titleEl = document.getElementById('files-title');
+  const subEl = document.getElementById('files-sub');
+
+  titleEl.textContent = isRu ? 'Файлы' : 'Fayllar';
+  subEl.textContent = isRu ? 'Учебные материалы' : 'Dərs materialları';
+
+  // Render subject filter buttons
+  if (grid) {
+    const allLabel = isRu ? '📋 Все' : '📋 Hamısı';
+    grid.innerHTML = `<div class="subj-card fu ${!_filesSubject?'active-subj':''}" style="${!_filesSubject?'border-color:var(--mint);':''}" onclick="loadFiles('')"><div class="subj-name">${allLabel}</div></div>`
+      + Object.keys(SUBJECTS_AZ).map(code => `
+        <div class="subj-card fu ${_filesSubject===code?'active-subj':''}" style="${_filesSubject===code?'border-color:var(--mint);':''}" onclick="loadFiles('${code}')">
+          <div class="subj-icon">${SUBJ_ICONS[code]||'📗'}</div>
+          <div class="subj-name">${SUBJECTS()[code]}</div>
+        </div>`).join('');
+  }
+
+  wrap.innerHTML = '<div class="spinner"></div>';
+  try {
+    const qs = subject ? `?subject=${encodeURIComponent(subject)}&lang=${lang}` : `?lang=${lang}`;
+    const d = await api(`/files${qs}`);
+    const files = d.files || [];
+    if (!files.length) {
+      wrap.innerHTML = `<div class="card" style="text-align:center;padding:28px">
+        <div style="font-size:36px;margin-bottom:10px">📂</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px">${isRu?'Файлы не найдены':'Fayl tapılmadı'}</div>
+        <div style="font-size:12px;color:var(--text2)">${isRu?'Материалы ещё не загружены':'Materiallar hələ yüklənməyib'}</div>
+      </div>`;
+      return;
+    }
+    wrap.innerHTML = files.map((f,i) => `
+      <div class="card fu" style="animation-delay:${i*.03}s;margin-bottom:8px">
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <div style="font-size:28px;flex-shrink:0">📄</div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:700;line-height:1.4;margin-bottom:3px">${escHtml(f.title||'')}</div>
+            ${f.description?`<div style="font-size:12px;color:var(--text2);margin-bottom:4px">${escHtml(f.description)}</div>`:''}
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+              ${f.subject?`<span class="badge badge-mint">${SUBJECTS()[f.subject]||f.subject}</span>`:''}
+              ${f.author?`<span class="badge badge-gray">👤 ${escHtml(f.author)}</span>`:''}
+              <span class="badge badge-gray">⬇️ ${f.downloads||0}</span>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="downloadFile('${escHtml(f.id||'')}')">
+              ${isRu?'⬇️ Скачать':'⬇️ Yüklə'}
+            </button>
+          </div>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    wrap.innerHTML = `<div class="card card-danger"><p>${isRu?'Ошибка загрузки':'Yüklənmə xətası'}</p></div>`;
+  }
+}
+
+async function downloadFile(fileId) {
+  if (!fileId) return;
+  const lang = S.user?.lang || 'az';
+  const isRu = lang === 'ru';
+  toast(isRu ? '📤 Göndərilir...' : '📤 Göndərilir...');
+  try {
+    const d = await api(`/files/download/${fileId}?user_id=${userId}`);
+    if (d.ok) {
+      toast(isRu ? '✅ Fayl botda göndərildi!' : '✅ Fayl botda göndərildi!');
+    } else {
+      toast('❌ ' + (d.error || (isRu ? 'Xəta' : 'Xəta')));
+    }
+  } catch(e) {
+    toast(isRu ? '❌ Bağlantı xətası' : '❌ Bağlantı xətası');
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -1526,13 +1809,25 @@ async function submitPromo() {
 function setLang(lang) {
   if (S.user) S.user.lang = lang;
   api('/set_lang', { user_id: userId, lang }).catch(()=>{});
+  // Re-render everything that depends on language
+  renderHome();
+  renderSubjectsGrid();
   loadProfile();
   toast(lang==='ru' ? '🇷🇺 Русский выбран' : '🇦🇿 Azərbaycanca seçildi');
 }
 
 function shareRef(link) {
   if (!link) { toast('Profil yüklənmədi'); return; }
-  tg?.openTelegramLink?.(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('Rezidentura imtahanına hazırlaşmaq üçün bot!')}`);
+  const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('Rezidentura imtahanına hazırlaşmaq üçün bot!')}`;
+  if (tg?.openTelegramLink) {
+    tg.openTelegramLink(shareUrl);
+  } else if (navigator.share) {
+    navigator.share({ url: link, text: 'Rezidentura imtahanına hazırlaşmaq üçün bot!' }).catch(()=>{});
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(link).then(() => toast('🔗 Link kopyalandı!')).catch(()=>{ window.open(shareUrl,'_blank'); });
+  } else {
+    window.open(shareUrl, '_blank');
+  }
 }
 
 function startDuel() {
