@@ -308,6 +308,25 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
 .skel-block.w-40  { width: 40%; }
 .skel-card { background: var(--white); border: 1.5px solid var(--border); border-radius: var(--r); padding: 14px; margin-bottom: 10px; }
 
+/* ── FILE CHIPS ── */
+.file-chip {
+  display:inline-flex; align-items:center; gap:4px; white-space:nowrap;
+  padding:6px 12px; border-radius:100px; border:1.5px solid var(--border);
+  background:var(--white); font-size:12px; font-weight:700; cursor:pointer;
+  transition:all .15s; flex-shrink:0;
+}
+.file-chip.active { background:var(--mint); color:#fff; border-color:var(--mint); }
+.file-chip:active { transform:scale(.95); }
+
+/* ── FILE CARD ── */
+.file-card {
+  background:var(--white); border:1.5px solid var(--border);
+  border-radius:var(--r); padding:14px; margin-bottom:8px;
+  box-shadow:var(--shadow); cursor:pointer; transition:border-color .15s;
+}
+.file-card:active { border-color:var(--mint); }
+.file-type-icon { font-size:28px; flex-shrink:0; }
+
 .upload-area {
   border:2px dashed var(--border); border-radius:var(--r);
   padding:28px 20px; text-align:center; cursor:pointer;
@@ -399,17 +418,17 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
       <div class="lim-chip">
         <div class="lim-icon">🚀</div>
         <div class="lim-val" id="lim-exam">—</div>
-        <div class="lim-lbl">İmtahan</div>
+        <div class="lim-lbl" id="lim-lbl-exam">İmtahan</div>
       </div>
       <div class="lim-chip">
         <div class="lim-icon">📚</div>
         <div class="lim-val" id="lim-mini">—</div>
-        <div class="lim-lbl">Mini-test</div>
+        <div class="lim-lbl" id="lim-lbl-mini">Mini-test</div>
       </div>
       <div class="lim-chip">
         <div class="lim-icon">⚔️</div>
         <div class="lim-val" id="lim-duel">—</div>
-        <div class="lim-lbl">Duel</div>
+        <div class="lim-lbl" id="lim-lbl-duel">Duel</div>
       </div>
     </div>
 
@@ -424,7 +443,7 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
       </button>
     </div>
 
-    <div class="section-label">TESTLƏR</div>
+    <div class="section-label" id="home-section-tests">TESTLƏR</div>
     <div class="fu" style="animation-delay:.08s">
       <div class="qa-card" onclick="goTo('s-subjects')">
         <div class="qa-icon">📚</div>
@@ -438,7 +457,7 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
       </div>
     </div>
 
-    <div class="section-label">DİGƏR</div>
+    <div class="section-label" id="home-section-other">DİGƏR</div>
     <div class="fu" style="animation-delay:.11s">
       <div class="qa-card" onclick="goTo('s-mistakes')">
         <div class="qa-icon">🧠</div>
@@ -676,11 +695,160 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
     <div class="topbar-back" onclick="goBack()">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="var(--text)" stroke-width="2.2" stroke-linecap="round"/></svg>
     </div>
-    <div><div class="topbar-title" id="files-title">Fayllar</div><div class="topbar-sub" id="files-sub">Dərs materialları</div></div>
+    <div style="flex:1"><div class="topbar-title" id="files-title">Fayllar</div><div class="topbar-sub" id="files-sub">Dərs materialları</div></div>
+    <div id="files-search-toggle" onclick="toggleFilesSearch()" style="width:34px;height:34px;border-radius:50%;background:var(--mintbg);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-right:6px">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="var(--text)" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke="var(--text)" stroke-width="2.2" stroke-linecap="round"/></svg>
+    </div>
+    <div onclick="toggleFilesSort()" style="width:34px;height:34px;border-radius:50%;background:var(--mintbg);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0" id="files-sort-btn" title="Sort">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M7 12h10M11 18h2" stroke="var(--text)" stroke-width="2.2" stroke-linecap="round"/></svg>
+    </div>
+    <div onclick="openUploadMaterial()" style="width:34px;height:34px;border-radius:50%;background:var(--mint);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-left:6px" title="Material yüklə">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12l7-7 7 7" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+  </div>
+  <!-- Search bar (hidden by default) -->
+  <div id="files-search-bar" style="display:none;padding:8px 14px 0;flex-shrink:0">
+    <input class="input" id="files-search-input" type="text" placeholder="Axtar: kitab, konspekt, PDF..." oninput="onFilesSearchInput(this.value)" style="padding:11px 14px;font-size:14px" autocomplete="off" autocorrect="off" spellcheck="false">
+  </div>
+  <!-- Sort control (hidden by default) -->
+  <div id="files-sort-bar" style="display:none;padding:8px 14px 0;flex-shrink:0">
+    <div style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none">
+      <div class="file-chip active" id="sort-chip-newest" onclick="setFilesSort('newest')">🕒 Yeni</div>
+      <div class="file-chip" id="sort-chip-downloads" onclick="setFilesSort('downloads')">⬇️ Yüklənmə</div>
+      <div class="file-chip" id="sort-chip-title" onclick="setFilesSort('title')">🔤 Ad</div>
+      <div class="file-chip" id="sort-chip-oldest" onclick="setFilesSort('oldest')">📅 Köhnə</div>
+    </div>
+  </div>
+  <!-- Subject filter chips -->
+  <div style="flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:8px 14px 0;display:flex;gap:7px;scrollbar-width:none" id="files-chips-wrap">
+    <!-- filled dynamically -->
   </div>
   <div class="scroll" style="padding-top:10px">
-    <div class="subj-grid" id="files-subj-grid" style="margin-bottom:10px"></div>
     <div id="files-content"><div class="spinner"></div></div>
+    <!-- Load more button -->
+    <div id="files-loadmore-wrap" style="display:none;padding:0 0 10px">
+      <button class="btn btn-secondary" onclick="loadMoreFiles()">
+        <span id="files-loadmore-text">Daha çox yüklə</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     FILE DETAIL SCREEN
+══════════════════════════════════════ -->
+<div class="screen hidden" id="s-file-detail">
+  <div class="topbar">
+    <div class="topbar-back" onclick="goBack()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="var(--text)" stroke-width="2.2" stroke-linecap="round"/></svg>
+    </div>
+    <div><div class="topbar-title" id="file-detail-title">Fayl</div><div class="topbar-sub" id="file-detail-sub">Məlumat</div></div>
+  </div>
+  <div class="scroll" style="padding-top:10px">
+    <div id="file-detail-content"></div>
+  </div>
+</div>
+
+<!-- IMAGE VIEWER MODAL -->
+<div id="img-viewer-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92)" onclick="closeImageViewer()">
+  <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column">
+    <div style="position:absolute;top:18px;right:18px;color:#fff;font-size:28px;cursor:pointer;opacity:.8;line-height:1;z-index:1" onclick="closeImageViewer()">✕</div>
+    <img id="img-viewer-img" src="" alt="" style="max-width:96vw;max-height:82vh;object-fit:contain;border-radius:8px" onclick="event.stopPropagation()">
+    <div id="img-viewer-caption" style="color:rgba(255,255,255,.7);font-size:12px;margin-top:10px;padding:0 16px;text-align:center;max-width:320px"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     UPLOAD MATERIAL SCREEN (Task 2)
+══════════════════════════════════════ -->
+<div class="screen hidden" id="s-upload-material">
+  <div class="topbar">
+    <div class="topbar-back" onclick="goBack()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="var(--text)" stroke-width="2.2" stroke-linecap="round"/></svg>
+    </div>
+    <div><div class="topbar-title" id="upm-title">Material yüklə</div><div class="topbar-sub" id="upm-sub">PDF, DOCX, PPTX, TXT, Şəkil</div></div>
+  </div>
+  <div class="scroll" style="padding-top:10px">
+
+    <!-- File picker -->
+    <div class="card" style="margin-bottom:10px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px" id="upm-file-label">📎 Fayl seçin <span style="color:var(--danger)">*</span></div>
+      <input type="file" id="upm-file-input" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.webp" style="display:none" onchange="onUpmFileChange(this)">
+      <div id="upm-drop-zone" onclick="document.getElementById('upm-file-input').click()"
+           style="border:2px dashed var(--border);border-radius:var(--r-m);padding:24px 16px;text-align:center;cursor:pointer;transition:border-color .15s;background:var(--mintbg)">
+        <div style="font-size:36px;margin-bottom:8px">📂</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text)" id="upm-drop-label">Faylı seçmək üçün klikləyin</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">PDF · DOCX · PPTX · TXT · JPG · PNG · WEBP · maks 20 MB</div>
+      </div>
+      <div id="upm-file-preview" style="display:none;margin-top:10px;padding:10px 12px;background:var(--mintbg);border-radius:var(--r-s);display:none;align-items:center;gap:10px">
+        <div id="upm-file-icon" style="font-size:28px"></div>
+        <div style="flex:1;min-width:0">
+          <div id="upm-file-name" style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+          <div id="upm-file-size" style="font-size:11px;color:var(--text3)"></div>
+        </div>
+        <div onclick="clearUpmFile()" style="font-size:18px;cursor:pointer;opacity:.6;flex-shrink:0">✕</div>
+      </div>
+    </div>
+
+    <!-- Metadata form -->
+    <div class="card" style="margin-bottom:10px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px" id="upm-info-label">📝 Məlumat</div>
+
+      <div style="margin-bottom:10px">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:4px" id="upm-title-label">Başlıq <span style="color:var(--danger)">*</span></div>
+        <input class="input" id="upm-title-input" type="text" placeholder="Materialın adı..." maxlength="120">
+      </div>
+
+      <div style="margin-bottom:10px">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:4px" id="upm-desc-label">Təsvir</div>
+        <textarea class="input" id="upm-desc-input" placeholder="Qısa məlumat (istəyə bağlı)..." rows="3" maxlength="500" style="resize:none"></textarea>
+      </div>
+
+      <div style="margin-bottom:10px">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:4px" id="upm-subj-label">Fənn</div>
+        <select class="input" id="upm-subject-select" style="appearance:auto">
+          <option value="">— Seçin —</option>
+        </select>
+      </div>
+
+      <div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:4px" id="upm-cat-label">Kateqoriya</div>
+        <input class="input" id="upm-category-input" type="text" placeholder="Konspekt, Test, Kitab..." maxlength="60">
+      </div>
+    </div>
+
+    <!-- Status message -->
+    <div id="upm-status" style="display:none;margin-bottom:10px"></div>
+
+    <!-- Submit -->
+    <button class="btn btn-primary" id="upm-submit-btn" onclick="submitUploadMaterial()">
+      🚀 <span id="upm-submit-text">Göndər</span>
+    </button>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px;line-height:1.5" id="upm-disclaimer">
+      Material admin tərəfindən yoxlanıldıqdan sonra dərc ediləcək.<br>Təsdiqləndikdə +5 gün Premium alacaqsınız.
+    </div>
+    <div style="height:20px"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     GLOBAL ERROR BOUNDARY
+══════════════════════════════════════ -->
+<div class="screen hidden" id="s-error-boundary" style="background:#FFFDF8;align-items:center;justify-content:center">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:0;padding:32px;text-align:center">
+    <div style="font-size:64px;margin-bottom:14px;line-height:1">💥</div>
+    <div style="font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;color:var(--text);margin-bottom:8px" id="eb-title">Xəta baş verdi</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.6;max-width:280px;margin-bottom:8px" id="eb-message">Gözlənilməz xəta. Zəhmət olmasa yenidən cəhd edin.</div>
+    <div style="font-size:11px;color:var(--text3);background:var(--mintbg);border-radius:8px;padding:6px 12px;margin-bottom:24px;font-family:monospace;word-break:break-all;max-width:300px" id="eb-code"></div>
+    <div class="btn-row" style="max-width:300px;width:100%">
+      <button class="btn btn-primary" onclick="errorBoundaryRetry()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M1 4v6h6M23 20v-6h-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span id="eb-retry-text">Yenidən cəhd et</span>
+      </button>
+      <button class="btn btn-secondary" onclick="switchTab('home')">
+        <span id="eb-home-text">Ana səhifə</span>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -801,7 +969,7 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
       <img class="upload-preview" id="receipt-preview" alt="">
     </div>
     <div id="receipt-send-btn" style="display:none">
-      <button class="btn btn-primary" onclick="sendReceipt()">✅ Çeki göndər</button>
+      <button id="receipt-send-btn-inner" class="btn btn-primary" onclick="sendReceipt()">✅ Çeki göndər</button>
       <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px">Admin yoxlayacaq və limiti aktivləşdirəcək</p>
     </div>
   </div>
@@ -843,7 +1011,7 @@ const BASE_URL = (()=>{
   // ───────────────────────────────────────────────────────────────────
   const fromMeta = document.querySelector('meta[name="api-url"]')?.content;
   if (fromMeta && fromMeta !== '__API_URL__') return fromMeta;
-  return 'https://testbot-mini.onrender.com';  // <-- ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL
+  return 'https://YOUR_SERVER_URL';  // <-- ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL
 })();
 
 const CARD_NUMBER = '5522 0993 5658 0951';
@@ -964,12 +1132,24 @@ window.addEventListener('online', () => {
   if (currentScreen() === 's-offline') {
     showScreen('s-loading');
     init();
+  } else {
+    // Silently retry any failed loads on the current screen
+    const cur = currentScreen();
+    if (cur === 's-files') loadFiles();
   }
 });
 window.addEventListener('offline', () => {
-  showScreen('s-offline');
   _updateOfflineLabels();
+  showScreen('s-offline');
 });
+
+// Periodic connectivity check every 10s when on offline screen
+setInterval(() => {
+  if (currentScreen() === 's-offline' && navigator.onLine) {
+    showScreen('s-loading');
+    init();
+  }
+}, 10000);
 
 function _showServerError() {
   _updateOfflineLabels();
@@ -1065,10 +1245,27 @@ function goTo(id, noStack) {
   if (id === 's-subjects') renderSubjectsGrid();
   if (id === 's-mistakes') loadMistakes();
   if (id === 's-shop')     renderShop();
-  if (id === 's-files')    loadFiles();
+  if (id === 's-files')    {
+    // Reset search and sort bars on enter
+    const sb = document.getElementById('files-search-bar');
+    const sortb = document.getElementById('files-sort-bar');
+    const inp = document.getElementById('files-search-input');
+    if (sb) sb.style.display = 'none';
+    if (sortb) sortb.style.display = 'none';
+    if (inp) inp.value = '';
+    FS.sortBarOpen = false;
+    FS.page=1; FS.searchMode=false; FS.searchQuery='';
+    loadFiles();
+  }
+  if (id === 's-upload-material') { _upmApplyLang(); _upmPopulateSubjects(); }
   if (id === 's-topics')   loadTopicsList();
 }
 function goBack() {
+  // Close image viewer if open
+  const overlay = document.getElementById('img-viewer-overlay');
+  if (overlay && overlay.style.display !== 'none') {
+    closeImageViewer(); return;
+  }
   if (S.stack.length) {
     showScreen(S.stack.pop());
     if (!S.stack.length) tg?.BackButton.hide();
@@ -1116,7 +1313,6 @@ async function init() {
     return;
   }
 
-  renderSubjectsGrid();
   renderShop();
   // BUG-017: graceful screen when opened outside Telegram
   if (!userId) {
@@ -1135,6 +1331,7 @@ async function init() {
   try {
     const d = await api(`/user/${userId}`);
     S.user = d.user;
+    renderSubjectsGrid();
     renderHome();
     loadMistakesCount();
     updateStaticLabels();
@@ -1200,6 +1397,20 @@ function renderHome() {
     if (cards[3]) setCard(cards[3], homeLabels.duel);
     if (cards[4]) setCard(cards[4], homeLabels.files);
   } catch(e) {}
+
+  // Update limit chip labels
+  const limLblExam = document.getElementById('lim-lbl-exam');
+  const limLblMini = document.getElementById('lim-lbl-mini');
+  const limLblDuel = document.getElementById('lim-lbl-duel');
+  if (limLblExam) limLblExam.textContent = isRu ? 'Экзамен' : 'İmtahan';
+  if (limLblMini) limLblMini.textContent = isRu ? 'Мини-тест' : 'Mini-test';
+  if (limLblDuel) limLblDuel.textContent = isRu ? 'Дуэль' : 'Duel';
+
+  // Update home section labels
+  const secTests = document.getElementById('home-section-tests');
+  const secOther = document.getElementById('home-section-other');
+  if (secTests) secTests.textContent = isRu ? 'ТЕСТЫ' : 'TESTLƏR';
+  if (secOther) secOther.textContent = isRu ? 'ДРУГОЕ' : 'DİGƏR';
 
   refreshHomeLimits();
   // TASK 4: show continue button if saved exam exists
@@ -1299,21 +1510,33 @@ async function loadTopicsList() {
   const isRu = lang === 'ru';
   document.getElementById('topics-title').textContent = SUBJECTS()[code] || code;
   document.getElementById('topics-sub').textContent = isRu ? 'Выберите тему' : 'Mövzu seçin';
-  if (S.currentTopics && S.currentTopics.length) {
+  // BUG FIX: only use cached topics when they belong to THIS subject
+  if (S.currentTopics && S.currentTopics.length && S._topicsSubject === code) {
     renderTopicsList(S.currentTopics, isRu);
     return;
   }
+  S._topicsSubject = code;
+  S.currentTopics = [];
   wrap.innerHTML = '<div class="spinner"></div>';
   try {
     const d = await api(`/topics/${code}?lang=${lang}`);
     S.currentTopics = d.topics || [];
     if (!S.currentTopics.length) {
-      wrap.innerHTML = `<div class="card" style="text-align:center;padding:28px;color:var(--text2)">${isRu?'Темы не найдены':'Mövzu tapılmadı'}</div>`;
+      wrap.innerHTML = `<div class="card" style="text-align:center;padding:36px 28px">
+        <div style="font-size:48px;margin-bottom:12px">📚</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:6px;color:var(--text)">${isRu?'Темы не найдены':'Mövzu tapılmadı'}</div>
+        <div style="font-size:12px;color:var(--text2)">${isRu?'По этому предмету тем пока нет':'Bu fənn üzrə mövzu hələ yoxdur'}</div>
+      </div>`;
       return;
     }
     renderTopicsList(S.currentTopics, isRu);
   } catch(e) {
-    wrap.innerHTML = '<div class="card card-danger"><p>Yüklənmə xətası</p></div>';
+    if (e.message === 'offline') return;
+    wrap.innerHTML = `<div class="card card-danger" style="text-align:center;padding:24px">
+      <div style="font-size:32px;margin-bottom:8px">⚠️</div>
+      <p style="margin:0 0 12px">${isRu?'Ошибка загрузки':'Yüklənmə xətası'}</p>
+      <button class="btn btn-secondary" style="max-width:200px" onclick="loadTopicsList()">↻ ${isRu?'Повторить':'Yenidən'}</button>
+    </div>`;
   }
 }
 
@@ -1495,7 +1718,6 @@ async function selectAnswer(idx) {
 
   // save progress async
   api('/save_progress', { user_id:userId, index:S.idx+1, score:S.score, subject:S.subject, mode:S.mode, answers_log:S.log }, {silent:true}).catch(()=>{});
-  api('/activity', { user_id:userId }, {silent:true}).catch(()=>{});
 
   setTimeout(() => {
     S.idx++;
@@ -1623,7 +1845,8 @@ async function doFinish() {
   const streak = S.user?.streak?.current || 0;
   const td  = S.user?.stats?.today_solved || score;
   const goal = S.user?.stats?.daily_goal || 30;
-  document.getElementById('res-streak').textContent = `${streak} gün`;
+  const isRuRes = (S.user?.lang || 'az') === 'ru';
+  document.getElementById('res-streak').textContent = isRuRes ? `${streak} дней` : `${streak} gün`;
   document.getElementById('res-today').textContent  = `${td}/${goal}`;
 
   // Arc animation — single animation block (БАГ-09 FIX: removed duplicate at 150ms)
@@ -1793,8 +2016,15 @@ async function loadMistakes() {
       </div>`;
     }).join('');
   } catch(e) {
-    wrap.innerHTML = '<div class="card card-danger"><p>Yüklənmə xətası</p></div>';
-    document.getElementById('start-mistakes-btn-wrap').style.display = 'none';
+    if (e.message === 'offline') return;
+    const isRu2 = (S.user?.lang || 'az') === 'ru';
+    wrap.innerHTML = `<div class="card card-danger" style="text-align:center;padding:24px">
+      <div style="font-size:32px;margin-bottom:8px">⚠️</div>
+      <p style="margin:0 0 12px">${isRu2?'Ошибка загрузки':'Yüklənmə xətası'}</p>
+      <button class="btn btn-secondary" style="max-width:200px" onclick="loadMistakes()">↻ ${isRu2?'Повторить':'Yenidən'}</button>
+    </div>`;
+    const startBtnWrap = document.getElementById('start-mistakes-btn-wrap');
+    if (startBtnWrap) startBtnWrap.style.display = 'none';
   }
 }
 
@@ -1911,82 +2141,516 @@ async function confirmClearMistakes() {
 }
 
 // ═══════════════════════════════════════════════
-//  FILES
+//  FILES — STATE
 // ═══════════════════════════════════════════════
-let _filesSubject = '';
-async function loadFiles(subject) {
+const FS = {
+  subject:      '',       // active subject filter
+  searchQuery:  '',       // debounced search query
+  page:         1,
+  pageSize:     20,
+  hasMore:      false,
+  loading:      false,
+  allFiles:     [],       // current page data
+  searchMode:   false,    // true = showing search results
+  searchTimer:  null,
+  sort:         'newest', // newest | oldest | downloads | title
+  sortBarOpen:  false,
+};
+
+function _fileTypeIcon(mime, fileType) {
+  if (!mime && !fileType) return '📄';
+  const m = (mime || '').toLowerCase();
+  const t = (fileType || '').toLowerCase();
+  if (m.includes('pdf'))                                                   return '📕';
+  if (m.includes('image') || t === 'image')                               return '🖼️';
+  if (m.includes('word') || m.includes('document') || t === 'docx')      return '📝';
+  if (m.includes('presentation') || t === 'pptx')                        return '📊';
+  if (m.includes('sheet') || t === 'xlsx')                                return '📈';
+  if (m.includes('text') || t === 'txt')                                  return '📃';
+  if (m.includes('zip') || m.includes('archive') || m.includes('rar'))   return '📦';
+  if (m.includes('video'))                                                 return '🎬';
+  if (m.includes('audio'))                                                 return '🎵';
+  return '📄';
+}
+
+function _fileSizeStr(bytes) {
+  if (!bytes || bytes <= 0) return '';
+  if (bytes < 1024)       return bytes + ' B';
+  if (bytes < 1048576)    return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+function _fileDateStr(created_at) {
+  if (!created_at) return '';
+  try {
+    const d = new Date(created_at);
+    return d.toLocaleDateString('az-AZ', { day:'2-digit', month:'2-digit', year:'numeric' });
+  } catch { return ''; }
+}
+
+function _renderFileCard(f, i) {
   const lang = S.user?.lang || 'az';
   const isRu = lang === 'ru';
-  _filesSubject = subject || '';
-  const wrap = document.getElementById('files-content');
-  const grid = document.getElementById('files-subj-grid');
-  const titleEl = document.getElementById('files-title');
-  const subEl = document.getElementById('files-sub');
-
-  titleEl.textContent = isRu ? 'Файлы' : 'Fayllar';
-  subEl.textContent = isRu ? 'Учебные материалы' : 'Dərs materialları';
-
-  // Render subject filter buttons
-  if (grid) {
-    const allLabel = isRu ? '📋 Все' : '📋 Hamısı';
-    grid.innerHTML = `<div class="subj-card fu ${!_filesSubject?'active-subj':''}" style="${!_filesSubject?'border-color:var(--mint);':''}" onclick="loadFiles('')"><div class="subj-name">${allLabel}</div></div>`
-      + Object.keys(SUBJECTS_AZ).map(code => `
-        <div class="subj-card fu ${_filesSubject===code?'active-subj':''}" style="${_filesSubject===code?'border-color:var(--mint);':''}" onclick="loadFiles('${code}')">
-          <div class="subj-icon">${SUBJ_ICONS[code]||'📗'}</div>
-          <div class="subj-name">${SUBJECTS()[code]}</div>
-        </div>`).join('');
-  }
-
-  wrap.innerHTML = '<div class="spinner"></div>';
-  try {
-    const qs = subject ? `?subject=${encodeURIComponent(subject)}&lang=${lang}` : `?lang=${lang}`;
-    const d = await api(`/files${qs}`);
-    const files = d.files || [];
-    if (!files.length) {
-      wrap.innerHTML = `<div class="card" style="text-align:center;padding:28px">
-        <div style="font-size:36px;margin-bottom:10px">📂</div>
-        <div style="font-size:14px;font-weight:600;margin-bottom:6px">${isRu?'Файлы не найдены':'Fayl tapılmadı'}</div>
-        <div style="font-size:12px;color:var(--text2)">${isRu?'Материалы ещё не загружены':'Materiallar hələ yüklənməyib'}</div>
-      </div>`;
-      return;
-    }
-    wrap.innerHTML = files.map((f,i) => `
-      <div class="card fu" style="animation-delay:${i*.03}s;margin-bottom:8px">
-        <div style="display:flex;align-items:flex-start;gap:10px">
-          <div style="font-size:28px;flex-shrink:0">📄</div>
-          <div style="flex:1">
-            <div style="font-size:14px;font-weight:700;line-height:1.4;margin-bottom:3px">${escHtml(f.title||'')}</div>
-            ${f.description?`<div style="font-size:12px;color:var(--text2);margin-bottom:4px">${escHtml(f.description)}</div>`:''}
-            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
-              ${f.subject?`<span class="badge badge-mint">${SUBJECTS()[f.subject]||f.subject}</span>`:''}
-              ${f.author?`<span class="badge badge-gray">👤 ${escHtml(f.author)}</span>`:''}
-              <span class="badge badge-gray">⬇️ ${f.downloads||0}</span>
-            </div>
-            <button class="btn btn-primary btn-sm" onclick="downloadFile('${escHtml(f.id||'')}')">
-              ${isRu?'⬇️ Скачать':'⬇️ Yüklə'}
+  const icon = _fileTypeIcon(f.mime_type, f.file_type);
+  const subjName = SUBJECTS()[f.subject] || f.subject || '';
+  const dateStr = _fileDateStr(f.created_at || f.upload_date);
+  const sizeStr = _fileSizeStr(f.file_size);
+  const isImage = (f.mime_type || '').toLowerCase().includes('image');
+  const isPdf   = (f.mime_type || '').toLowerCase().includes('pdf');
+  return `
+    <div class="file-card fu" style="animation-delay:${(i%10)*.03}s" onclick="openFileDetail('${escHtml(f.id)}')">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div class="file-type-icon">${icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:700;line-height:1.4;margin-bottom:3px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(f.title||'')}</div>
+          ${f.description ? `<div style="font-size:12px;color:var(--text2);margin-bottom:5px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(f.description)}</div>` : ''}
+          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
+            ${subjName ? `<span class="badge badge-mint">${escHtml(subjName)}</span>` : ''}
+            ${f.category ? `<span class="badge badge-gray">🏷 ${escHtml(f.category)}</span>` : ''}
+            ${f.uploader||f.author ? `<span class="badge badge-gray">👤 ${escHtml(f.uploader||f.author)}</span>` : ''}
+            <span class="badge badge-gray">⬇️ ${f.downloads_count??f.downloads??0}</span>
+            ${sizeStr ? `<span class="badge badge-gray">📦 ${sizeStr}</span>` : ''}
+            ${dateStr ? `<span class="badge badge-gray">📅 ${dateStr}</span>` : ''}
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-primary btn-sm" style="width:auto;padding:8px 14px" onclick="event.stopPropagation();downloadFile('${escHtml(f.id||'')}','${escHtml(f.title||'')}')">
+              ⬇️ ${isRu?'Скачать':'Yüklə'}
             </button>
+            ${isPdf && f.file_url ? `<button class="btn btn-secondary btn-sm" style="width:auto;padding:8px 12px" onclick="event.stopPropagation();openPdfFile('${escHtml(f.file_url||'')}')">📖 PDF</button>` : ''}
+            ${isImage && f.file_url ? `<button class="btn btn-secondary btn-sm" style="width:auto;padding:8px 12px" onclick="event.stopPropagation();openImageViewer('${escHtml(f.file_url||'')}','${escHtml(f.title||'')}')">🖼️ ${isRu?'Смотреть':'Bax'}</button>` : ''}
           </div>
         </div>
+      </div>
+    </div>`;
+}
+
+function _skeletonFiles(count=5) {
+  return Array.from({length:count}, () => `
+    <div class="skel-card" style="display:flex;align-items:flex-start;gap:10px">
+      <div class="skeleton" style="width:34px;height:34px;border-radius:8px;flex-shrink:0"></div>
+      <div style="flex:1">
+        <div class="skeleton skel-block w-70" style="margin-bottom:6px"></div>
+        <div class="skeleton skel-block h-sm w-50"></div>
+        <div class="skeleton skel-block h-sm w-40" style="margin-top:8px"></div>
+        <div class="skeleton skel-block h-sm w-30" style="margin-top:5px"></div>
+      </div>
+    </div>`).join('');
+}
+
+function _renderFilesChips() {
+  const lang = S.user?.lang || 'az';
+  const isRu = lang === 'ru';
+  const wrap = document.getElementById('files-chips-wrap');
+  if (!wrap) return;
+  const allLabel = isRu ? '📋 Все' : '📋 Hamısı';
+  wrap.innerHTML = `<div class="file-chip ${!FS.subject?'active':''}" onclick="setFilesSubject('')">${allLabel}</div>`
+    + Object.keys(SUBJECTS_AZ).map(code => `
+      <div class="file-chip ${FS.subject===code?'active':''}" onclick="setFilesSubject('${code}')">
+        ${SUBJ_ICONS[code]||'📗'} ${SUBJECTS()[code]}
       </div>`).join('');
-  } catch(e) {
-    wrap.innerHTML = `<div class="card card-danger"><p>${isRu?'Ошибка загрузки':'Yüklənmə xətası'}</p></div>`;
+}
+
+function setFilesSubject(code) {
+  FS.subject = code;
+  FS.page = 1;
+  FS.searchMode = false;
+  FS.searchQuery = '';
+  const inp = document.getElementById('files-search-input');
+  if (inp) inp.value = '';
+  _renderFilesChips();
+  loadFiles();
+}
+
+function toggleFilesSearch() {
+  const bar = document.getElementById('files-search-bar');
+  if (!bar) return;
+  const visible = bar.style.display !== 'none';
+  // Close sort bar if open
+  const sortBar = document.getElementById('files-sort-bar');
+  if (sortBar) sortBar.style.display = 'none';
+  FS.sortBarOpen = false;
+
+  bar.style.display = visible ? 'none' : 'block';
+  if (!visible) {
+    setTimeout(() => document.getElementById('files-search-input')?.focus(), 80);
+  } else {
+    // hiding search — reset
+    FS.searchQuery = '';
+    FS.searchMode = false;
+    FS.page = 1;
+    const inp = document.getElementById('files-search-input');
+    if (inp) inp.value = '';
+    loadFiles();
   }
 }
 
-async function downloadFile(fileId) {
-  if (!fileId) return;
+function toggleFilesSort() {
+  const sortBar = document.getElementById('files-sort-bar');
+  if (!sortBar) return;
+  // Close search bar if open
+  const searchBar = document.getElementById('files-search-bar');
+  if (searchBar) searchBar.style.display = 'none';
+
+  FS.sortBarOpen = !FS.sortBarOpen;
+  sortBar.style.display = FS.sortBarOpen ? 'block' : 'none';
+}
+
+function setFilesSort(sort) {
+  if (FS.sort === sort) return;
+  FS.sort = sort;
+  FS.page = 1;
+  // Update active chip
+  ['newest','oldest','downloads','title'].forEach(s => {
+    const el = document.getElementById('sort-chip-' + s);
+    if (el) el.classList.toggle('active', s === sort);
+  });
+  // Close sort bar
+  const sortBar = document.getElementById('files-sort-bar');
+  if (sortBar) sortBar.style.display = 'none';
+  FS.sortBarOpen = false;
+  loadFiles();
+}
+
+function onFilesSearchInput(val) {
+  clearTimeout(FS.searchTimer);
+  const query = (val || '').trim();
+  FS.searchTimer = setTimeout(() => {
+    FS.searchQuery = query;
+    FS.page = 1;
+    FS.searchMode = query.length > 0;
+    if (query.length === 0) {
+      loadFiles();
+    } else {
+      searchFiles(query);
+    }
+  }, 400); // debounce 400ms
+}
+
+async function searchFiles(query) {
+  if (FS.loading) return;
+  FS.loading = true;
   const lang = S.user?.lang || 'az';
   const isRu = lang === 'ru';
-  toast(isRu ? '📤 Göndərilir...' : '📤 Göndərilir...');
+  const wrap = document.getElementById('files-content');
+  wrap.innerHTML = _skeletonFiles(4);
+  _updateLoadMore(false);
+
   try {
-    const d = await api(`/files/download/${fileId}?user_id=${userId}`);
+    const params = new URLSearchParams({
+      q: query,
+      lang,
+      page: String(FS.page),
+      page_size: String(FS.pageSize),
+    });
+    if (FS.subject) params.set('subject', FS.subject);
+    // Try /materials/search first, fall back to /files/search
+    let d;
+    try {
+      d = await api(`/materials/search?${params.toString()}`);
+      if (d.materials !== undefined) {
+        d.files = d.materials; // normalize
+      }
+    } catch(_e) {
+      d = await api(`/files/search?${params.toString()}`);
+    }
+    const files = d.files || d.materials || [];
+    FS.allFiles = files;
+    FS.hasMore = d.has_more || false;
+
+    if (!files.length) {
+      wrap.innerHTML = `<div class="card" style="text-align:center;padding:36px 28px">
+        <div style="font-size:48px;margin-bottom:12px">🔍</div>
+        <div style="font-family:var(--fh);font-size:15px;font-weight:800;margin-bottom:6px">${isRu?'Ничего не найдено':'Nəticə tapılmadı'}</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:16px">${isRu?'Попробуйте другой запрос':'Başqa açar söz cəhd edin'}</div>
+        <button class="btn btn-secondary" style="max-width:200px" onclick="document.getElementById('files-search-input').value='';onFilesSearchInput('')">✕ ${isRu?'Сбросить':'Sıfırla'}</button>
+      </div>`;
+      _updateLoadMore(false);
+      return;
+    }
+    wrap.innerHTML = files.map((f,i) => _renderFileCard(f,i)).join('');
+    _updateLoadMore(FS.hasMore, isRu);
+  } catch(e) {
+    if (e.message === 'offline') return;
+    wrap.innerHTML = `<div class="card card-danger" style="text-align:center;padding:24px">
+      <div style="font-size:32px;margin-bottom:8px">⚠️</div>
+      <p style="margin:0">${isRu?'Ошибка поиска':'Axtarış xətası'}</p>
+      <button class="btn btn-secondary" style="max-width:200px;margin-top:12px" onclick="searchFiles('${escHtml(query)}')">↻ ${isRu?'Повторить':'Yenidən'}</button>
+    </div>`;
+  } finally {
+    FS.loading = false;
+  }
+}
+
+function _updateLoadMore(hasMore, isRu) {
+  const wrap = document.getElementById('files-loadmore-wrap');
+  const btn  = document.getElementById('files-loadmore-text');
+  if (!wrap) return;
+  wrap.style.display = hasMore ? 'block' : 'none';
+  if (btn) btn.textContent = (isRu || (S.user?.lang==='ru')) ? 'Загрузить ещё' : 'Daha çox yüklə';
+}
+
+async function loadMoreFiles() {
+  if (FS.loading || !FS.hasMore) return;
+  FS.page++;
+  const lang = S.user?.lang || 'az';
+  if (FS.searchMode && FS.searchQuery) {
+    const p = new URLSearchParams({q: FS.searchQuery, lang, page: String(FS.page), page_size: String(FS.pageSize)});
+    if (FS.subject) p.set('subject', FS.subject);
+    await _appendFiles(`/materials/search?${p.toString()}`, true);
+  } else {
+    const p = new URLSearchParams({lang, page: String(FS.page), page_size: String(FS.pageSize), sort: FS.sort});
+    if (FS.subject) p.set('subject', FS.subject);
+    await _appendFiles(`/materials?${p.toString()}`, false);
+  }
+}
+
+async function _appendFiles(url, isSearch) {
+  FS.loading = true;
+  const btn = document.getElementById('files-loadmore-text');
+  const isRu = (S.user?.lang||'az') === 'ru';
+  if (btn) btn.textContent = isRu ? '⏳ Yüklənir...' : '⏳ Yüklənir...';
+  try {
+    const d = await api(url);
+    const files = d.materials || d.files || [];
+    FS.allFiles.push(...files);
+    FS.hasMore = d.has_more || false;
+    const wrap = document.getElementById('files-content');
+    const start = FS.allFiles.length - files.length;
+    wrap.insertAdjacentHTML('beforeend', files.map((f,i) => _renderFileCard(f, start+i)).join(''));
+    _updateLoadMore(FS.hasMore, isRu);
+  } catch(e) {
+    if (e.message !== 'offline') {
+      if (btn) btn.textContent = isRu ? 'Ошибка, повторить' : 'Xəta, yenidən cəhd et';
+    }
+    FS.page--;
+  } finally {
+    FS.loading = false;
+  }
+}
+
+// loadFiles — race condition fix: cancel stale request via token
+let _loadFilesToken = 0;
+
+async function loadFiles(subject) {
+  const lang = S.user?.lang || 'az';
+  const isRu = lang === 'ru';
+  if (subject !== undefined) {
+    FS.subject = subject;
+    FS.page = 1;
+  }
+
+  // Race condition fix: each call gets a unique token; stale calls bail out
+  const myToken = ++_loadFilesToken;
+
+  FS.loading = true;
+  FS.searchMode = false;
+  FS.allFiles = [];
+
+  const titleEl = document.getElementById('files-title');
+  const subEl   = document.getElementById('files-sub');
+  if (titleEl) titleEl.textContent = isRu ? 'Файлы' : 'Fayllar';
+  if (subEl)   subEl.textContent   = isRu ? 'Учебные материалы' : 'Dərs materialları';
+
+  _renderFilesChips();
+
+  const wrap = document.getElementById('files-content');
+  if (wrap) wrap.innerHTML = _skeletonFiles(5);
+  _updateLoadMore(false);
+
+  try {
+    const params = new URLSearchParams({
+      lang,
+      page: String(FS.page),
+      page_size: String(FS.pageSize),
+      sort: FS.sort,
+    });
+    if (FS.subject) params.set('subject', FS.subject);
+
+    let d;
+    try {
+      d = await api(`/materials?${params.toString()}`);
+      if (d.materials !== undefined) d.files = d.materials;
+    } catch(_e) {
+      // fallback to legacy /files endpoint
+      d = await api(`/files?${params.toString()}`);
+    }
+
+    // Stale check
+    if (myToken !== _loadFilesToken) return;
+
+    const files = d.files || d.materials || [];
+    FS.allFiles = files;
+    FS.hasMore = d.has_more || false;
+
+    if (!wrap) return;
+    if (!files.length) {
+      wrap.innerHTML = `<div class="card" style="text-align:center;padding:36px 28px">
+        <div style="font-size:56px;margin-bottom:12px">📂</div>
+        <div style="font-family:var(--fh);font-size:15px;font-weight:800;margin-bottom:8px">${isRu?'Материалы не найдены':'Material tapılmadı'}</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6">${FS.subject
+          ? (isRu?'По этому предмету материалов нет':'Bu fənn üzrə material yoxdur')
+          : (isRu?'Материалы ещё не загружены':'Materiallar hələ yüklənməyib')
+        }</div>
+      </div>`;
+      _updateLoadMore(false);
+      return;
+    }
+    wrap.innerHTML = files.map((f,i) => _renderFileCard(f,i)).join('');
+    _updateLoadMore(FS.hasMore, isRu);
+  } catch(e) {
+    if (myToken !== _loadFilesToken) return;
+    if (e.message === 'offline') return;
+    if (!wrap) return;
+    wrap.innerHTML = `<div class="card card-danger" style="text-align:center;padding:28px">
+      <div style="font-size:40px;margin-bottom:10px">⚠️</div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:12px">${isRu?'Ошибка загрузки':'Yüklənmə xətası'}</div>
+      <button class="btn btn-primary" style="max-width:200px" onclick="loadFiles()">↻ ${isRu?'Повторить':'Yenidən cəhd et'}</button>
+    </div>`;
+    _updateLoadMore(false);
+  } finally {
+    if (myToken === _loadFilesToken) FS.loading = false;
+  }
+}
+
+function openFileDetail(fileId) {
+  const file = FS.allFiles.find(f => f.id === fileId);
+  if (!file) return;
+  const lang = S.user?.lang || 'az';
+  const isRu = lang === 'ru';
+  const icon = _fileTypeIcon(file.mime_type, file.file_type);
+  const dateStr = _fileDateStr(file.created_at || file.upload_date);
+  const subjName = SUBJECTS()[file.subject] || file.subject || '';
+  const sizeStr = _fileSizeStr(file.file_size);
+  const isImage = (file.mime_type || '').toLowerCase().includes('image');
+  const isPdf   = (file.mime_type || '').toLowerCase().includes('pdf');
+
+  const titleEl = document.getElementById('file-detail-title');
+  const subEl   = document.getElementById('file-detail-sub');
+  if (titleEl) titleEl.textContent = file.title || (isRu ? 'Fayl' : 'Fayl');
+  if (subEl)   subEl.textContent   = file.file_name || (isRu ? 'Məlumat' : 'Məlumat');
+
+  const wrap = document.getElementById('file-detail-content');
+  wrap.innerHTML = `
+    <div class="card card-mint" style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <div style="font-size:48px;line-height:1">${icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-family:var(--fh);font-size:16px;font-weight:900;line-height:1.3">${escHtml(file.title||'')}</div>
+          ${file.file_name ? `<div style="font-size:11px;color:var(--text3);margin-top:3px;word-break:break-all">${escHtml(file.file_name)}</div>` : ''}
+        </div>
+      </div>
+      ${file.description ? `<div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:0">${escHtml(file.description)}</div>` : ''}
+    </div>
+
+    <div class="card" style="margin-bottom:10px">
+      ${subjName ? `<div class="stat-row" style="padding-top:0"><span class="stat-label">📚 ${isRu?'Предмет':'Fənn'}</span><span class="stat-val">${escHtml(subjName)}</span></div>` : ''}
+      ${file.category ? `<div class="stat-row"><span class="stat-label">🏷 ${isRu?'Категория':'Kateqoriya'}</span><span class="stat-val">${escHtml(file.category)}</span></div>` : ''}
+      ${(file.uploader||file.author) ? `<div class="stat-row"><span class="stat-label">👤 ${isRu?'Автор':'Müəllif'}</span><span class="stat-val">${escHtml(file.uploader||file.author)}</span></div>` : ''}
+      <div class="stat-row"><span class="stat-label">⬇️ ${isRu?'Скачиваний':'Yüklənmə'}</span><span class="stat-val">${file.downloads_count??file.downloads??0}</span></div>
+      ${sizeStr ? `<div class="stat-row"><span class="stat-label">📦 ${isRu?'Размер':'Ölçü'}</span><span class="stat-val">${sizeStr}</span></div>` : ''}
+      ${dateStr ? `<div class="stat-row" style="padding-bottom:0"><span class="stat-label">📅 ${isRu?'Добавлено':'Əlavə edilib'}</span><span class="stat-val">${dateStr}</span></div>` : ''}
+    </div>
+
+    <button class="btn btn-primary" style="margin-bottom:8px" onclick="downloadFile('${escHtml(file.id||'')}','${escHtml(file.title||'')}')">
+      ⬇️ ${isRu?'Скачать в Telegram':'Telegram-da yüklə'}
+    </button>
+    ${isPdf && file.file_url ? `
+    <button class="btn btn-secondary" style="margin-bottom:8px" onclick="openPdfFile('${escHtml(file.file_url||'')}')">
+      📖 ${isRu?'Открыть PDF':'PDF aç'}
+    </button>` : ''}
+    ${isImage && file.file_url ? `
+    <button class="btn btn-secondary" style="margin-bottom:8px" onclick="openImageViewer('${escHtml(file.file_url||'')}','${escHtml(file.title||'')}')">
+      🖼️ ${isRu?'Просмотр изображения':'Şəklə bax'}
+    </button>` : ''}
+    <button class="btn btn-secondary" onclick="goBack()">
+      ← ${isRu?'Назад':'Geri'}
+    </button>`;
+  goTo('s-file-detail');
+}
+
+// ─────────────────────────────────────────────
+//  PDF VIEWER — opens in Telegram WebView
+// ─────────────────────────────────────────────
+function openPdfFile(url) {
+  if (!url) { toast('PDF URL tapılmadı'); return; }
+  tg?.HapticFeedback?.impactOccurred('light');
+  // Telegram's openLink opens in in-app browser
+  if (tg?.openLink) {
+    tg.openLink(url);
+  } else {
+    window.open(url, '_blank');
+  }
+}
+
+// ─────────────────────────────────────────────
+//  IMAGE VIEWER MODAL
+// ─────────────────────────────────────────────
+function openImageViewer(url, caption) {
+  if (!url) { toast('Şəkil URL tapılmadı'); return; }
+  const overlay = document.getElementById('img-viewer-overlay');
+  const img     = document.getElementById('img-viewer-img');
+  const cap     = document.getElementById('img-viewer-caption');
+  if (!overlay || !img) return;
+  img.src = url;
+  img.alt = caption || '';
+  if (cap) cap.textContent = caption || '';
+  overlay.style.display = 'flex';
+  tg?.HapticFeedback?.impactOccurred('light');
+}
+
+function closeImageViewer() {
+  const overlay = document.getElementById('img-viewer-overlay');
+  if (overlay) overlay.style.display = 'none';
+  const img = document.getElementById('img-viewer-img');
+  if (img) img.src = '';
+}
+
+// Close image viewer on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeImageViewer();
+});
+
+// ─────────────────────────────────────────────
+//  DOWNLOAD FILE (sends via Telegram bot)
+// ─────────────────────────────────────────────
+const _downloadInProgress = new Set();
+
+async function downloadFile(fileId, fileTitle) {
+  if (!fileId) return;
+  if (_downloadInProgress.has(fileId)) {
+    toast('⏳ Göndərilir...'); return;
+  }
+  if (!userId) { toast('Xəta: istifadəçi tapılmadı'); return; }
+  const lang = S.user?.lang || 'az';
+  const isRu = lang === 'ru';
+  tg?.HapticFeedback?.impactOccurred('medium');
+  toast(isRu ? '📤 Fayl göndərilir...' : '📤 Fayl göndərilir...');
+  _downloadInProgress.add(fileId);
+  try {
+    // Try /materials/{id}/download first, fall back to /files/download/{id}
+    let d;
+    try {
+      d = await api(`/materials/${fileId}/download?user_id=${userId}`);
+    } catch(_e) {
+      d = await api(`/files/download/${fileId}?user_id=${userId}`);
+    }
     if (d.ok) {
-      toast(isRu ? '✅ Fayl botda göndərildi!' : '✅ Fayl botda göndərildi!');
+      toast(isRu ? '✅ Fayl Telegram-da göndərildi!' : '✅ Fayl Telegram-da göndərildi!');
+      // Update local download count
+      const f = FS.allFiles.find(x => x.id === fileId);
+      if (f) {
+        f.downloads_count = (f.downloads_count ?? f.downloads ?? 0) + 1;
+        f.downloads = f.downloads_count;
+      }
     } else {
       toast('❌ ' + (d.error || (isRu ? 'Xəta' : 'Xəta')));
     }
   } catch(e) {
-    toast(isRu ? '❌ Bağlantı xətası' : '❌ Bağlantı xətası');
+    if (e.message !== 'offline') {
+      toast(isRu ? '❌ Bağlantı xətası' : '❌ Bağlantı xətası');
+    }
+  } finally {
+    _downloadInProgress.delete(fileId);
   }
 }
 
@@ -2013,7 +2677,16 @@ async function loadTop() {
     if (d.my_rank > 20) {
       wrap.innerHTML += `<div style="padding:12px;text-align:center;font-size:13px;color:var(--text2)">📍 Sizin yerinizdə: <b style="color:var(--text)">${d.my_rank}</b></div>`;
     }
-  } catch { wrap.innerHTML = '<div class="card card-danger"><p>Yüklənmə xətası</p></div>'; }
+  } catch(e) {
+    if (e.message !== 'offline') {
+      const isRuTop = (S.user?.lang || 'az') === 'ru';
+      wrap.innerHTML = `<div class="card card-danger" style="text-align:center;padding:24px">
+        <div style="font-size:32px;margin-bottom:8px">⚠️</div>
+        <p style="margin:0 0 12px">${isRuTop?'Ошибка загрузки':'Yüklənmə xətası'}</p>
+        <button class="btn btn-secondary" style="max-width:200px" onclick="loadTop()">↻ ${isRuTop?'Повторить':'Yenidən'}</button>
+      </div>`;
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -2083,7 +2756,18 @@ async function loadProfile() {
         <a href="https://t.me/rezidentadmin" style="flex:1;text-decoration:none"><button class="btn btn-ghost" style="width:100%">🆘 Dəstək</button></a>
       </div>
     `;
-  } catch { wrap.innerHTML = '<div class="card card-danger"><p>Yüklənmə xətası</p></div>'; }
+    // Task 4: Load user's own material submissions in background
+    _loadProfileMyMaterials(lang === 'ru').catch(() => {});
+  } catch(e) {
+    if (e.message !== 'offline') {
+      const isRuProf = (S.user?.lang || 'az') === 'ru';
+      wrap.innerHTML = `<div class="card card-danger" style="text-align:center;padding:28px">
+        <div style="font-size:40px;margin-bottom:10px">⚠️</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:12px">${isRuProf?'Ошибка загрузки профиля':'Profil yüklənmə xətası'}</div>
+        <button class="btn btn-primary" style="max-width:200px" onclick="loadProfile()">↻ ${isRuProf?'Повторить':'Yenidən cəhd et'}</button>
+      </div>`;
+    }
+  }
 }
 
 function openPromo() {
@@ -2166,8 +2850,8 @@ function setLang(lang) {
   if (S.user) S.user.lang = lang;
   api('/set_lang', { user_id: userId, lang }).catch(()=>{});
   // Re-render everything that depends on language
-  renderHome();
   renderSubjectsGrid();
+  renderHome();
   loadProfile();
   updateStaticLabels();
   toast(lang==='ru' ? '🇷🇺 Русский выбран' : '🇦🇿 Azərbaycanca seçildi');
@@ -2183,6 +2867,13 @@ function updateStaticLabels() {
   const subjSub   = document.querySelector('#s-subjects .topbar-sub');
   if (subjTitle) subjTitle.textContent = t('Fənn Testləri', 'Предметы');
   if (subjSub)   subjSub.textContent   = t('Fənn seçin', 'Выберите предмет');
+
+  // s-files
+  const filesTitle = document.querySelector('#s-files .topbar-title');
+  const filesSub   = document.querySelector('#s-files .topbar-sub');
+  if (filesTitle) filesTitle.textContent = t('Fayllar', 'Файлы');
+  if (filesSub)   filesSub.textContent   = t('Dərs materialları', 'Учебные материалы');
+  _renderFilesChips(); // re-render chips with new language
 
   // s-subject-mode
   const subjModeTitle = document.querySelector('#s-subject-mode .topbar-sub');
@@ -2330,33 +3021,50 @@ async function createDuel() {
   } catch { toast('Bağlantı xətası'); }
 }
 
+let _duelActionInProgress = false;
+
 async function joinDuel(duelId) {
+  if (_duelActionInProgress) return;
+  _duelActionInProgress = true;
   tg?.HapticFeedback?.impactOccurred('medium');
+  const lang = S.user?.lang || 'az';
+  const isRu = lang === 'ru';
   try {
     const d = await api('/duel/join', { user_id: userId, duel_id: duelId });
     if (d.error) { toast('❌ ' + d.error); return; }
     if (d.ok && d.questions && d.questions.length > 0) {
-      // БАГ-05 FIX: backend now returns questions in /duel/join response
       S.qs=d.questions; S.idx=0; S.score=0; S.mode='duel'; S.subject='Duel';
       S.log=[]; S.startTime=Date.now(); S.lastParams=null;
       S.stack=[]; clearInterval(S.timerIv);
       document.getElementById('exam-timer').style.display='none';
       showScreen('s-exam'); renderQ();
     } else if (d.ok) {
-      // Fallback: joined but no questions returned yet (waiting for opponent)
-      toast('✅ Duelə qoşuldunuz! Bot-da davam edin.');
+      toast(isRu ? '✅ Присоединились к дуэли! Продолжите в боте.' : '✅ Duelə qoşuldunuz! Bot-da davam edin.');
       loadDuelHub();
     } else {
-      toast('❌ ' + (d.error||'Xəta'));
+      toast('❌ ' + (d.error || (isRu ? 'Xəta' : 'Xəta')));
     }
-  } catch { toast('Bağlantı xətası'); }
+  } catch(e) {
+    if (e.message !== 'offline') toast(isRu ? 'Ошибка соединения' : 'Bağlantı xətası');
+  } finally {
+    _duelActionInProgress = false;
+  }
 }
 
 async function cancelDuel(duelId) {
+  if (_duelActionInProgress) return;
+  _duelActionInProgress = true;
+  const lang = S.user?.lang || 'az';
+  const isRu = lang === 'ru';
   try {
     await api('/duel/cancel', { user_id: userId, duel_id: duelId });
-    toast('Duel ləğv edildi'); loadDuelHub();
-  } catch { toast('Xəta'); }
+    toast(isRu ? 'Дуэль отменена' : 'Duel ləğv edildi');
+    loadDuelHub();
+  } catch(e) {
+    if (e.message !== 'offline') toast(isRu ? 'Ошибка' : 'Xəta');
+  } finally {
+    _duelActionInProgress = false;
+  }
 }
 
 function shareDuelLink(link) {
@@ -2440,27 +3148,41 @@ function handleReceipt(e) {
   document.getElementById('receipt-send-btn').style.display = 'block';
 }
 
+let _sendReceiptInProgress = false;
+
 async function sendReceipt() {
+  if (_sendReceiptInProgress) return;
   if (!S.receiptFile || !S.selPlan) { toast('Şəkil seçin'); return; }
-  tg?.HapticFeedback?.notificationOccurred('success');
+
+  const lang = S.user?.lang || 'az';
+  const isRu = lang === 'ru';
+  const btn = document.getElementById('receipt-send-btn-inner');
 
   const fd = new FormData();
   fd.append('user_id', String(userId));
   fd.append('plan_code', S.selPlan);
   fd.append('receipt', S.receiptFile);
 
+  _sendReceiptInProgress = true;
+  if (btn) { btn.textContent = isRu ? '⏳ Отправляется...' : '⏳ Göndərilir...'; btn.disabled = true; }
+  tg?.HapticFeedback?.notificationOccurred('success');
+
   try {
-    const btn = document.querySelector('#receipt-send-btn .btn');
-    btn.textContent = '⏳ Göndərilir...'; btn.disabled = true;
     const res = await apiForm('/send_receipt', fd);
     if (res.ok) {
-      toast('✅ Çek göndərildi! Admin yoxlayacaq.');
-      goBack(); goBack(); // back to profile/shop
-    } else toast('Xəta: ' + (res.error||''));
+      toast(isRu ? '✅ Чек отправлен! Администратор проверит.' : '✅ Çek göndərildi! Admin yoxlayacaq.');
+      S.receiptFile = null;
+      goBack(); goBack();
+    } else {
+      toast('❌ ' + (res.error || (isRu ? 'Xəta' : 'Xəta')));
+    }
   } catch(e) {
-    toast('Göndərmə xətası: ' + e.message);
-    const btn = document.querySelector('#receipt-send-btn .btn');
-    if (btn) { btn.textContent = '✅ Çeki göndər'; btn.disabled = false; }
+    if (e.message !== 'offline') {
+      toast(isRu ? '❌ Ошибка отправки' : '❌ Göndərmə xətası');
+    }
+  } finally {
+    _sendReceiptInProgress = false;
+    if (btn) { btn.textContent = isRu ? '✅ Отправить чек' : '✅ Çeki göndər'; btn.disabled = false; }
   }
 }
 
@@ -2521,6 +3243,382 @@ function skeletonLeaderboard() {
 }
 function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ═══════════════════════════════════════════════
+//  GLOBAL ERROR BOUNDARY (Task 4)
+// ═══════════════════════════════════════════════
+let _ebPrevScreen = 's-home';
+let _ebRetryFn    = null;
+
+function _showErrorBoundary(opts = {}) {
+  const lang = S.user?.lang || 'az';
+  const isRu = lang === 'ru';
+  _ebPrevScreen = currentScreen();
+
+  const titleEl  = document.getElementById('eb-title');
+  const msgEl    = document.getElementById('eb-message');
+  const codeEl   = document.getElementById('eb-code');
+  const retryEl  = document.getElementById('eb-retry-text');
+  const homeEl   = document.getElementById('eb-home-text');
+
+  if (titleEl)  titleEl.textContent  = opts.title  || (isRu ? 'Произошла ошибка' : 'Xəta baş verdi');
+  if (msgEl)    msgEl.textContent    = opts.message || (isRu ? 'Неожиданная ошибка. Попробуйте ещё раз.' : 'Gözlənilməz xəta. Zəhmət olmasa yenidən cəhd edin.');
+  if (codeEl)   codeEl.textContent   = opts.code    || '';
+  if (retryEl)  retryEl.textContent  = isRu ? 'Повторить' : 'Yenidən cəhd et';
+  if (homeEl)   homeEl.textContent   = isRu ? 'На главную' : 'Ana səhifə';
+
+  _ebRetryFn = opts.retry || null;
+  showScreen('s-error-boundary');
+
+  // Log to server silently
+  _logErrorToServer({
+    error_type: opts.type || 'boundary',
+    message:    opts.message || '',
+    code:       opts.code    || '',
+    screen:     _ebPrevScreen,
+  }).catch(()=>{});
+}
+
+function errorBoundaryRetry() {
+  if (_ebRetryFn) {
+    try { _ebRetryFn(); } catch(e) { console.error(e); }
+  } else {
+    showScreen(_ebPrevScreen !== 's-error-boundary' ? _ebPrevScreen : 's-home');
+  }
+}
+
+async function _logErrorToServer(data) {
+  try {
+    if (!BASE_URL || BASE_URL.includes('YOUR_SERVER')) return;
+    await fetch(BASE_URL + '/log_error', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: userId || null,
+        error_type: data.error_type || 'unknown',
+        message: String(data.message || '').slice(0, 500),
+        stack: String(data.stack || '').slice(0, 1000),
+        url: window.location.href,
+        screen: data.screen || currentScreen(),
+        version: '3.1',
+      }),
+    });
+  } catch {}
+}
+
+// ─────────────────────────────────────────────
+//  GLOBAL ERROR BOUNDARY HANDLERS (Task 4)
+// ─────────────────────────────────────────────
+
+const _CRITICAL_ERROR_PATTERNS = [
+  /cannot read propert/i,
+  /is not a function/i,
+  /is not defined/i,
+  /syntaxerror/i,
+];
+
+function _isCriticalError(msg) {
+  const m = String(msg || '').toLowerCase();
+  return _CRITICAL_ERROR_PATTERNS.some(p => p.test(m));
+}
+
+// window.onerror catches syntax errors not caught by addEventListener
+window.onerror = function(msg, src, line, col, err) {
+  const message = String(msg || 'Unknown error');
+  const code    = err?.name ? `${err.name} (${(src||'').split('/').pop()}:${line})` : `${(src||'').split('/').pop()}:${line}`;
+  console.error('[window.onerror]', message, src, line, err);
+  _logErrorToServer({ error_type: 'js_onerror', message, stack: err?.stack || '', screen: currentScreen() }).catch(()=>{});
+  if (_isCriticalError(message)) {
+    _showErrorBoundary({ type: 'js_error', message, code });
+    return true;
+  }
+  return false;
+};
+
+// Global JS error handler (resource load errors + bubbled JS errors)
+window.addEventListener('error', e => {
+  if (e.target && e.target !== window) {
+    // Resource load error (img, script tag) — log silently
+    const src = e.target.src || e.target.href || '';
+    console.warn('[ResourceError]', e.target.tagName, src);
+    _logErrorToServer({ error_type: 'resource_error', message: `${e.target.tagName} failed: ${src}`, screen: currentScreen() }).catch(()=>{});
+    return;
+  }
+  const msg = e.message || String(e);
+  console.error('[GlobalError]', msg, e.error);
+  _logErrorToServer({ error_type: 'js_error', message: msg, stack: e.error?.stack || '', screen: currentScreen() }).catch(()=>{});
+}, true);
+
+// Unhandled promise rejections
+window.addEventListener('unhandledrejection', e => {
+  const msg = String(e.reason?.message || e.reason || 'Unhandled rejection');
+  const isNetworkErr = msg === 'offline' || msg === 'Failed to fetch' || msg === 'timeout';
+  console.error('[UnhandledRejection]', msg);
+  _logErrorToServer({ error_type: 'promise_rejection', message: msg, stack: e.reason?.stack || '', screen: currentScreen() }).catch(()=>{});
+  if (isNetworkErr) e.preventDefault();
+});
+
+// ═══════════════════════════════════════════════
+//  PROFILE — MY MATERIALS (Task 4)
+// ═══════════════════════════════════════════════
+async function _loadProfileMyMaterials(isRu) {
+  if (!userId) return;
+  const wrap = document.getElementById('profile-content');
+  if (!wrap) return;
+  try {
+    const d = await api(`/materials/my?user_id=${userId}&page=1&page_size=10`);
+    const mats = d.materials || [];
+    if (!mats.length) return;
+
+    const STATUS_BADGE = {
+      approved: `<span style="background:#e8faf3;color:#22c55e;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700">${isRu?'✅ Одобрено':'✅ Təsdiqləndi'}</span>`,
+      pending:  `<span style="background:#fffbeb;color:#f59e0b;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700">${isRu?'⏳ На проверке':'⏳ Gözlənilir'}</span>`,
+      rejected: `<span style="background:#fff0f0;color:#ef4444;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700">${isRu?'❌ Отклонено':'❌ Rədd edildi'}</span>`,
+      deleted:  `<span style="background:#f3f4f6;color:#9ca3af;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700">${isRu?'Удалено':'Silindi'}</span>`,
+    };
+    const rows = mats.map(m => `
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div style="font-size:20px;flex-shrink:0">${_fileTypeIcon(m.mime_type, m.file_type)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(m.title||'')}</div>
+          <div style="margin-top:3px">${STATUS_BADGE[m.status] || STATUS_BADGE.pending}</div>
+        </div>
+      </div>`).join('');
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.marginTop = '10px';
+    card.id = 'profile-my-materials-card';
+    card.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+        <div style="font-family:var(--fh);font-size:14px;font-weight:800">${isRu?'📚 Мои материалы':'📚 Mənim materiallarım'}</div>
+        <div style="font-size:11px;color:var(--text3)">${isRu?`Всего: ${d.total}`:`Cəmi: ${d.total}`}</div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">${isRu?'Статус ваших загруженных материалов':'Yüklədiyiniz materialların statusu'}</div>
+      ${rows}
+      <button class="btn btn-secondary btn-sm" style="margin-top:10px;width:auto;padding:8px 16px" onclick="openUploadMaterial()">
+        ＋ ${isRu?'Загрузить материал':'Material yüklə'}
+      </button>`;
+    wrap.appendChild(card);
+  } catch(e) {
+    // Supplementary — fail silently
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  UPLOAD MATERIAL (Task 2)
+// ═══════════════════════════════════════════════
+
+// State for the upload form
+const UPM = {
+  file:         null,   // File object
+  submitting:   false,
+};
+
+function openUploadMaterial() {
+  if (!userId) { toast('Giriş tələb olunur'); return; }
+  _upmReset();
+  _upmPopulateSubjects();
+  _upmApplyLang();
+  goTo('s-upload-material');
+  tg?.HapticFeedback?.impactOccurred('light');
+}
+
+function _upmApplyLang() {
+  const lang = S.user?.lang || 'az';
+  const isRu = lang === 'ru';
+  const els = {
+    'upm-title':       isRu ? 'Загрузить материал'           : 'Material yüklə',
+    'upm-sub':         isRu ? 'PDF, DOCX, PPTX, TXT, Изобр.' : 'PDF, DOCX, PPTX, TXT, Şəkil',
+    'upm-file-label':  isRu ? '📎 Выберите файл'             : '📎 Fayl seçin',
+    'upm-drop-label':  isRu ? 'Нажмите для выбора файла'     : 'Faylı seçmək üçün klikləyin',
+    'upm-info-label':  isRu ? '📝 Информация'                 : '📝 Məlumat',
+    'upm-title-label': isRu ? 'Название'                      : 'Başlıq',
+    'upm-desc-label':  isRu ? 'Описание'                      : 'Təsvir',
+    'upm-subj-label':  isRu ? 'Предмет'                       : 'Fənn',
+    'upm-cat-label':   isRu ? 'Категория'                     : 'Kateqoriya',
+    'upm-submit-text': isRu ? 'Отправить'                     : 'Göndər',
+    'upm-disclaimer':  isRu
+      ? 'Материал будет опубликован после проверки администратором.<br>После одобрения вы получите +5 дней Premium.'
+      : 'Material admin tərəfindən yoxlanıldıqdan sonra dərc ediləcək.<br>Təsdiqləndikdə +5 gün Premium alacaqsınız.',
+  };
+  Object.entries(els).forEach(([id, text]) => {
+    const el = document.getElementById(id);
+    if (el) {
+      if (id === 'upm-disclaimer') el.innerHTML = text;
+      else el.textContent = text;
+    }
+  });
+  const titleInp = document.getElementById('upm-title-input');
+  const descInp  = document.getElementById('upm-desc-input');
+  const catInp   = document.getElementById('upm-category-input');
+  if (titleInp) titleInp.placeholder = isRu ? 'Название материала...' : 'Materialın adı...';
+  if (descInp)  descInp.placeholder  = isRu ? 'Краткое описание...'   : 'Qısa məlumat...';
+  if (catInp)   catInp.placeholder   = isRu ? 'Конспект, Тест, Книга...' : 'Konspekt, Test, Kitab...';
+}
+
+function _upmPopulateSubjects() {
+  const sel = document.getElementById('upm-subject-select');
+  if (!sel) return;
+  const lang = S.user?.lang || 'az';
+  const isRu = lang === 'ru';
+  const subjs = SUBJECTS();
+  let opts = `<option value="">— ${isRu ? 'Выберите' : 'Seçin'} —</option>`;
+  Object.entries(subjs).forEach(([code, name]) => {
+    opts += `<option value="${escHtml(code)}">${escHtml(name)}</option>`;
+  });
+  sel.innerHTML = opts;
+}
+
+function _upmReset() {
+  UPM.file = null;
+  UPM.submitting = false;
+  const ids = ['upm-title-input','upm-desc-input','upm-category-input'];
+  ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const sel = document.getElementById('upm-subject-select');
+  if (sel) sel.value = '';
+  const fi = document.getElementById('upm-file-input');
+  if (fi) fi.value = '';
+  _upmClearPreview();
+  _upmSetStatus('', '');
+  const btn = document.getElementById('upm-submit-btn');
+  if (btn) btn.disabled = false;
+}
+
+function _upmClearPreview() {
+  const preview = document.getElementById('upm-file-preview');
+  const dropZone = document.getElementById('upm-drop-zone');
+  if (preview) preview.style.display = 'none';
+  if (dropZone) dropZone.style.display = 'block';
+}
+
+function clearUpmFile() {
+  UPM.file = null;
+  const fi = document.getElementById('upm-file-input');
+  if (fi) fi.value = '';
+  _upmClearPreview();
+}
+
+function onUpmFileChange(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+
+  const isRu = (S.user?.lang || 'az') === 'ru';
+  const MAX_MB = 20;
+  if (file.size > MAX_MB * 1024 * 1024) {
+    toast(`❌ ${isRu ? 'Файл слишком большой. Макс 20 МБ' : 'Fayl çox böyükdür. Maks 20 MB'}`);
+    input.value = '';
+    return;
+  }
+
+  UPM.file = file;
+
+  // Show preview
+  const preview  = document.getElementById('upm-file-preview');
+  const dropZone = document.getElementById('upm-drop-zone');
+  const iconEl   = document.getElementById('upm-file-icon');
+  const nameEl   = document.getElementById('upm-file-name');
+  const sizeEl   = document.getElementById('upm-file-size');
+
+  if (preview && dropZone) {
+    preview.style.display  = 'flex';
+    dropZone.style.display = 'none';
+  }
+  if (iconEl)  iconEl.textContent  = _fileTypeIcon(file.type, '');
+  if (nameEl)  nameEl.textContent  = file.name;
+  if (sizeEl)  sizeEl.textContent  = _fileSizeStr(file.size);
+}
+
+function _upmSetStatus(type, msg) {
+  const el = document.getElementById('upm-status');
+  if (!el) return;
+  if (!msg) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  const styles = {
+    success: 'background:var(--mintbg);border:1.5px solid var(--mint);color:var(--mint)',
+    error:   'background:#fff0f0;border:1.5px solid var(--danger);color:var(--danger)',
+    info:    'background:var(--mintbg);border:1.5px solid var(--border);color:var(--text2)',
+  };
+  el.style.cssText = `display:block;padding:12px 14px;border-radius:var(--r-s);font-size:13px;line-height:1.5;${styles[type] || styles.info}`;
+  el.innerHTML = msg;
+}
+
+async function submitUploadMaterial() {
+  if (UPM.submitting) return;
+  const lang  = S.user?.lang || 'az';
+  const isRu  = lang === 'ru';
+
+  const titleVal = (document.getElementById('upm-title-input')?.value || '').trim();
+  const descVal  = (document.getElementById('upm-desc-input')?.value  || '').trim();
+  const subjVal  = (document.getElementById('upm-subject-select')?.value || '').trim();
+  const catVal   = (document.getElementById('upm-category-input')?.value || '').trim();
+
+  // Validate
+  if (!UPM.file) {
+    _upmSetStatus('error', isRu ? '❌ Выберите файл' : '❌ Fayl seçin');
+    document.getElementById('upm-drop-zone')?.scrollIntoView({ behavior: 'smooth' });
+    return;
+  }
+  if (!titleVal) {
+    _upmSetStatus('error', isRu ? '❌ Введите название' : '❌ Başlıq daxil edin');
+    document.getElementById('upm-title-input')?.focus();
+    return;
+  }
+
+  UPM.submitting = true;
+  const btn      = document.getElementById('upm-submit-btn');
+  const btnText  = document.getElementById('upm-submit-text');
+  if (btn)     btn.disabled    = true;
+  if (btnText) btnText.textContent = isRu ? '⏳ Yüklənir...' : '⏳ Yüklənir...';
+  _upmSetStatus('info', isRu ? '⏳ Fayl yüklənir...' : '⏳ Fayl yüklənir...');
+
+  try {
+    const fd = new FormData();
+    fd.append('file',        UPM.file);
+    fd.append('user_id',     String(userId));
+    fd.append('title',       titleVal);
+    fd.append('description', descVal);
+    fd.append('subject',     subjVal);
+    fd.append('category',    catVal);
+    fd.append('lang',        lang);
+
+    const res = await apiForm('/materials/upload-file', fd);
+
+    if (res.ok) {
+      tg?.HapticFeedback?.notificationOccurred('success');
+      _upmSetStatus('success',
+        isRu
+          ? `✅ <b>Material göndərildi!</b><br>Admin yoxladıqdan sonra dərc ediləcək. Təsdiqləndikdə +5 gün Premium alacaqsınız.`
+          : `✅ <b>Material göndərildi!</b><br>Admin yoxladıqdan sonra dərc ediləcək. Təsdiqləndikdə +5 gün Premium alacaqsınız.`
+      );
+      // Clear form but stay on screen so user sees success
+      UPM.file = null;
+      const fi = document.getElementById('upm-file-input');
+      if (fi) fi.value = '';
+      _upmClearPreview();
+      ['upm-title-input','upm-desc-input','upm-category-input'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '';
+      });
+      const sel = document.getElementById('upm-subject-select');
+      if (sel) sel.value = '';
+      // Return to files list after short delay
+      setTimeout(() => { goBack(); loadFiles(); }, 2200);
+    } else {
+      _upmSetStatus('error', `❌ ${res.error || res.detail || (isRu ? 'Xəta' : 'Xəta')}`);
+    }
+  } catch(e) {
+    if (e.message === 'offline') {
+      _upmSetStatus('error', isRu ? '❌ İnternet bağlantısı yoxdur' : '❌ İnternet bağlantısı yoxdur');
+    } else {
+      _upmSetStatus('error', isRu ? `❌ Yükləmə xətası: ${e.message}` : `❌ Yükləmə xətası: ${e.message}`);
+    }
+  } finally {
+    UPM.submitting = false;
+    const b = document.getElementById('upm-submit-btn');
+    const bt = document.getElementById('upm-submit-text');
+    if (b)  b.disabled      = false;
+    if (bt) bt.textContent  = isRu ? 'Отправить' : 'Göndər';
+  }
 }
 
 // ═══════════════════════════════════════════════
