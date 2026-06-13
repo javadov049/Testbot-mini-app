@@ -1011,7 +1011,7 @@ const BASE_URL = (()=>{
   // ───────────────────────────────────────────────────────────────────
   const fromMeta = document.querySelector('meta[name="api-url"]')?.content;
   if (fromMeta && fromMeta !== '__API_URL__') return fromMeta;
-  return 'https://testbot-mini.onrender.com';  // <-- ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL
+  return 'https://testbot-mini.onrender.com';
 })();
 
 const CARD_NUMBER = '5522 0993 5658 0951';
@@ -1086,8 +1086,10 @@ function telegramLaunchData() {
 
 const tgLaunch = telegramLaunchData();
 const tgUser  = tgLaunch.user || {};
-const userId  = tgUser.id || null;
+let userId  = tgUser.id || null;
 const initData = tgLaunch.initData || '';
+const APP_TOKEN_KEY = 'rezident_app_token';
+let appToken = localStorage.getItem(APP_TOKEN_KEY) || '';
 
 function applyTelegramTheme() {
   if (!tg?.themeParams) return;
@@ -1199,9 +1201,11 @@ async function api(path, body, { silent = false } = {}) {
     if (!silent) { _updateOfflineLabels(); showScreen('s-offline'); }
     throw new Error('offline');
   }
+  const headers = { 'Content-Type':'application/json', 'X-Init-Data': initData };
+  if (appToken) headers['X-App-Token'] = appToken;
   const opts = {
     method: body ? 'POST' : 'GET',
-    headers: { 'Content-Type':'application/json', 'X-Init-Data': initData },
+    headers,
   };
   if (body) opts.body = JSON.stringify(body);
 
@@ -1242,7 +1246,7 @@ async function apiForm(path, fd, { silent = false } = {}) {
   try {
     const r = await fetch(BASE_URL + path, {
       method: 'POST',
-      headers: { 'X-Init-Data': initData },
+      headers: { 'X-Init-Data': initData, ...(appToken ? {'X-App-Token': appToken} : {}) },
       body: fd,
       signal: controller.signal,
     });
@@ -1333,6 +1337,105 @@ function toast(msg, ms=2200) {
   _tiv = setTimeout(() => el.classList.remove('show'), ms);
 }
 
+function apiConfigured() {
+  return BASE_URL && !BASE_URL.includes('YOUR_SERVER');
+}
+
+let _appLoginPollTimer = null;
+let _appLoginToken = '';
+
+function showAppLoginScreen(message='') {
+  const loading = document.getElementById('s-loading');
+  const storedApi = localStorage.getItem('_rezident_api') || '';
+  loading.innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;gap:14px;padding:28px;text-align:center;background:#FFFDF8">
+      <div style="font-size:54px">🩺</div>
+      <div style="font-family:'Nunito',sans-serif;font-size:22px;font-weight:900;color:#2A7A5E">Rezident</div>
+      <div style="font-size:14px;color:#4A6B5E;line-height:1.6;max-width:310px">
+        Войдите через Telegram-бота. Бот подтвердит ваш аккаунт, а приложение запомнит вход на этом телефоне.
+      </div>
+      ${apiConfigured() ? '' : `
+        <div style="width:100%;max-width:340px;text-align:left">
+          <div style="font-size:11px;font-weight:800;color:#2A7A5E;margin:0 0 6px">API URL</div>
+          <input id="app-api-url-input" value="${escHtml(storedApi)}" placeholder="https://your-api.example.com" style="box-sizing:border-box;width:100%;padding:13px 14px;border:1.5px solid #D6E7DC;border-radius:12px;font-size:14px">
+          <button onclick="saveStandaloneApiUrl()" style="width:100%;margin-top:8px;padding:13px;background:#E7F4ED;color:#2A7A5E;border:1.5px solid #BBDDCB;border-radius:12px;font-size:14px;font-weight:800">Сохранить API URL</button>
+        </div>`}
+      <button id="app-login-btn" onclick="startAppBotLogin()" style="width:100%;max-width:340px;padding:15px;background:#5BBB9B;color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:800;cursor:pointer">
+        Войти через Telegram-бота
+      </button>
+      <button onclick="openExternalUrl('https://t.me/rezidentbot')" style="width:100%;max-width:340px;padding:13px;background:transparent;color:#2A7A5E;border:1.5px solid #BBDDCB;border-radius:14px;font-size:14px;font-weight:800;cursor:pointer">
+        Открыть бота вручную
+      </button>
+      <div id="app-login-status" style="min-height:20px;font-size:13px;color:#4A6B5E">${escHtml(message)}</div>
+    </div>`;
+  showScreen('s-loading');
+}
+
+function saveStandaloneApiUrl() {
+  const input = document.getElementById('app-api-url-input');
+  const value = (input?.value || '').trim().replace(/\/+$/, '');
+  if (!/^https?:\/\/.+/i.test(value)) {
+    document.getElementById('app-login-status').textContent = 'Введите корректный URL API.';
+    return;
+  }
+  localStorage.setItem('_rezident_api', value);
+  location.reload();
+}
+
+async function startAppBotLogin() {
+  const status = document.getElementById('app-login-status');
+  const btn = document.getElementById('app-login-btn');
+  if (!apiConfigured()) {
+    if (status) status.textContent = 'Сначала укажите API URL.';
+    return;
+  }
+  if (btn) { btn.disabled = true; btn.textContent = 'Создаём вход...'; }
+  try {
+    const d = await api('/auth/start', { device_name: navigator.userAgent.slice(0, 120) });
+    _appLoginToken = d.login_token;
+    if (status) status.textContent = 'Откройте бота и подтвердите вход. Затем вернитесь сюда.';
+    openExternalUrl(d.bot_link);
+    if (_appLoginPollTimer) clearInterval(_appLoginPollTimer);
+    _appLoginPollTimer = setInterval(pollAppBotLogin, 2500);
+    setTimeout(pollAppBotLogin, 800);
+  } catch(e) {
+    const raw = String(e.message || '');
+    const msg = raw.includes('Not Found') || raw.includes('404')
+      ? 'На сервере ещё не обновлен backend: endpoint /auth/start не найден. Нужно задеплоить новый miniapp backend.'
+      : 'Не удалось начать вход: ' + (raw || 'ошибка');
+    if (status) status.textContent = msg;
+    if (btn) { btn.disabled = false; btn.textContent = 'Войти через Telegram-бота'; }
+  }
+}
+
+async function pollAppBotLogin() {
+  if (!_appLoginToken) return;
+  const status = document.getElementById('app-login-status');
+  try {
+    const d = await api('/auth/poll', { login_token: _appLoginToken, device_name: navigator.userAgent.slice(0, 120) }, {silent:true});
+    if (d.ok && d.app_token && d.user_id) {
+      clearInterval(_appLoginPollTimer);
+      _appLoginPollTimer = null;
+      appToken = d.app_token;
+      userId = d.user_id;
+      localStorage.setItem(APP_TOKEN_KEY, appToken);
+      if (status) status.textContent = 'Вход подтверждён. Загружаем приложение...';
+      setTimeout(init, 300);
+      return;
+    }
+    if (d.status === 'expired') {
+      clearInterval(_appLoginPollTimer);
+      _appLoginPollTimer = null;
+      _appLoginToken = '';
+      showAppLoginScreen('Ссылка входа истекла. Создайте новую.');
+    } else if (status) {
+      status.textContent = 'Ждём подтверждения в Telegram-боте...';
+    }
+  } catch(e) {
+    if (status && e.message !== 'offline') status.textContent = 'Проверка входа временно недоступна.';
+  }
+}
+
 // ═══════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════
@@ -1347,18 +1450,26 @@ async function init() {
   }
 
   renderShop();
-  // BUG-017: graceful screen when opened outside Telegram
   if (!userId) {
-    document.getElementById('s-loading').innerHTML = `
-      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;padding:32px;text-align:center;background:#FFFDF8">
-        <div style="font-size:56px">🩺</div>
-        <div style="font-family:'Nunito',sans-serif;font-size:22px;font-weight:900;color:#2A7A5E">Rezident</div>
-        <div style="font-size:14px;color:#4A6B5E;line-height:1.6;max-width:280px">Bu tətbiq yalnız Telegram daxilindən açıla bilər.<br><br>Botdan açmaq üçün aşağıdakı düyməyə basın.</div>
-        <a href="https://t.me/rezidentbot" style="text-decoration:none;width:100%;max-width:280px">
-          <button style="width:100%;padding:14px;background:#5BBB9B;color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer">Telegram-da aç</button>
-        </a>
-      </div>`;
-    showScreen('s-loading');
+    if (appToken) {
+      try {
+        const d = await api('/auth/me', null, {silent:true});
+        if (d.ok && d.user?.user_id) {
+          userId = d.user.user_id;
+          S.user = d.user;
+          renderSubjectsGrid();
+          renderHome();
+          loadMistakesCount();
+          updateStaticLabels();
+          showScreen('s-home');
+          return;
+        }
+      } catch {
+        localStorage.removeItem(APP_TOKEN_KEY);
+        appToken = '';
+      }
+    }
+    showAppLoginScreen();
     return;
   }
   try {
