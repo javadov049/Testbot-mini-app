@@ -1011,7 +1011,7 @@ const BASE_URL = (()=>{
   // ───────────────────────────────────────────────────────────────────
   const fromMeta = document.querySelector('meta[name="api-url"]')?.content;
   if (fromMeta && fromMeta !== '__API_URL__') return fromMeta;
-  return 'https://testbot-mini.onrender.com';  // <-- ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL
+  return 'https://YOUR_SERVER_URL';  // <-- ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL
 })();
 
 const CARD_NUMBER = '5522 0993 5658 0951';
@@ -1052,9 +1052,42 @@ const SUBJ_ICONS = {
 // ═══════════════════════════════════════════════
 const tg = window.Telegram?.WebApp;
 if (tg) { tg.expand(); tg.setHeaderColor('#F5F0E8'); tg.setBackgroundColor('#F5F0E8'); tg.ready(); }
-const tgUser  = tg?.initDataUnsafe?.user || {};
+
+function safeDecodeURIComponent(value) {
+  try { return decodeURIComponent(value || ''); } catch { return value || ''; }
+}
+
+function telegramLaunchData() {
+  const nativeInitData = tg?.initData || '';
+  const nativeUser = tg?.initDataUnsafe?.user || null;
+  if (nativeInitData || nativeUser?.id) {
+    return { initData: nativeInitData, user: nativeUser || {} };
+  }
+
+  const hash = window.location.hash ? window.location.hash.slice(1) : '';
+  const query = window.location.search ? window.location.search.slice(1) : '';
+  const params = new URLSearchParams(hash || query);
+  let webAppData = params.get('tgWebAppData') || '';
+  if (!webAppData && hash.startsWith('tgWebAppData=')) {
+    webAppData = hash.slice('tgWebAppData='.length);
+  }
+  webAppData = safeDecodeURIComponent(webAppData);
+
+  let user = {};
+  try {
+    const initParams = new URLSearchParams(webAppData);
+    const rawUser = initParams.get('user') || '';
+    if (rawUser) user = JSON.parse(safeDecodeURIComponent(rawUser));
+  } catch (err) {
+    console.warn('[TelegramInitDataParse]', err);
+  }
+  return { initData: webAppData, user };
+}
+
+const tgLaunch = telegramLaunchData();
+const tgUser  = tgLaunch.user || {};
 const userId  = tgUser.id || null;
-const initData = tg?.initData || '';
+const initData = tgLaunch.initData || '';
 
 function applyTelegramTheme() {
   if (!tg?.themeParams) return;
