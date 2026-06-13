@@ -825,7 +825,7 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
       🚀 <span id="upm-submit-text">Göndər</span>
     </button>
     <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px;line-height:1.5" id="upm-disclaimer">
-      Material admin tərəfindən yoxlanıldıqdan sonra dərc ediləcək.<br>Təsdiqləndikdə +5 gün Premium alacaqsınız.
+      Material yoxlanıldıqdan sonra dərc ediləcək.<br>Təsdiqləndikdə +5 gün Premium alacaqsınız.
     </div>
     <div style="height:20px"></div>
   </div>
@@ -1011,7 +1011,7 @@ const BASE_URL = (()=>{
   // ───────────────────────────────────────────────────────────────────
   const fromMeta = document.querySelector('meta[name="api-url"]')?.content;
   if (fromMeta && fromMeta !== '__API_URL__') return fromMeta;
-  return 'https://testbot-mini.onrender.com';  // <-- ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL
+  return 'https://YOUR_SERVER_URL';  // <-- ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL
 })();
 
 const CARD_NUMBER = '5522 0993 5658 0951';
@@ -3441,7 +3441,7 @@ function _upmApplyLang() {
     'upm-submit-text': isRu ? 'Отправить'                     : 'Göndər',
     'upm-disclaimer':  isRu
       ? 'Материал будет опубликован после проверки администратором.<br>После одобрения вы получите +5 дней Premium.'
-      : 'Material admin tərəfindən yoxlanıldıqdan sonra dərc ediləcək.<br>Təsdiqləndikdə +5 gün Premium alacaqsınız.',
+      : 'Material yoxlanıldıqdan sonra dərc ediləcək.<br>Təsdiqləndikdə +5 gün Premium alacaqsınız.',
   };
   Object.entries(els).forEach(([id, text]) => {
     const el = document.getElementById(id);
