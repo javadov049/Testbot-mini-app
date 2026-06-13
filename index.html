@@ -948,29 +948,29 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
       <div style="font-family:var(--fh);font-size:20px;font-weight:900;color:var(--green)" id="card-price-label"></div>
     </div>
 
-    <div class="section-label">ADDIMLAR</div>
+    <div class="section-label" id="pay-steps-label">ADDIMLAR</div>
     <div class="card" style="margin-bottom:10px">
-      <div style="font-size:13px;line-height:2;color:var(--text2)">
+      <div style="font-size:13px;line-height:2;color:var(--text2)" id="pay-steps-text">
         <b style="color:var(--text)">1.</b> Aşağıdakı kart nömrəsinə köçürün:<br>
         <div style="background:var(--mintbg);border-radius:var(--r-s);padding:10px 12px;margin:8px 0;font-family:var(--fh);font-size:16px;font-weight:900;letter-spacing:.06em;color:var(--green);cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="copyCard()">
           <span id="card-number">5522 0993 5658 0951</span>
-          <span style="font-size:11px;color:var(--text3);font-weight:600">Kopyala</span>
+          <span id="copy-card-label" style="font-size:11px;color:var(--text3);font-weight:600">Kopyala</span>
         </div>
         <b style="color:var(--text)">2.</b> Ödənişin ekran görüntüsünü çəkin<br>
         <b style="color:var(--text)">3.</b> Aşağıdan şəkli göndərin
       </div>
     </div>
 
-    <div class="section-label">ÇEKİ GÖNDƏR</div>
+    <div class="section-label" id="receipt-section-label">ÇEKİ GÖNDƏR</div>
     <div class="upload-area" onclick="triggerUpload()">
       <input type="file" accept="image/*" id="receipt-file" onchange="handleReceipt(event)">
       <div class="upload-icon">📷</div>
-      <div class="upload-text">Şəkilə klikləyin və ya çəkin</div>
+      <div class="upload-text" id="receipt-upload-text">Şəkilə klikləyin və ya çəkin</div>
       <img class="upload-preview" id="receipt-preview" alt="">
     </div>
     <div id="receipt-send-btn" style="display:none">
       <button id="receipt-send-btn-inner" class="btn btn-primary" onclick="sendReceipt()">✅ Çeki göndər</button>
-      <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px">Admin yoxlayacaq və limiti aktivləşdirəcək</p>
+      <p id="receipt-help-text" style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px">Admin yoxlayacaq və limiti aktivləşdirəcək</p>
     </div>
   </div>
 </div>
@@ -1011,7 +1011,7 @@ const BASE_URL = (()=>{
   // ───────────────────────────────────────────────────────────────────
   const fromMeta = document.querySelector('meta[name="api-url"]')?.content;
   if (fromMeta && fromMeta !== '__API_URL__') return fromMeta;
-  return 'https://testbot-mini.onrender.com';  // <-- ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL
+  return 'https://YOUR_SERVER_URL';  // <-- ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL
 })();
 
 const CARD_NUMBER = '5522 0993 5658 0951';
@@ -1571,14 +1571,27 @@ async function startExam(type) {
 
 async function doStartTest(params) {
   showScreen('s-loading');
+  const lang = S.user?.lang || 'az';
+  const isRu = lang === 'ru';
   try {
     const d = await api('/start_test', { user_id: userId, ...params });
     if (d.error) {
-      toast('⚠️ ' + d.error);
+      if (d.needs_promo) {
+        toast(isRu ? '🎟 Для тестов по темам нужен промокод' : '🎟 Mövzu testləri üçün promokod lazımdır', 3200);
+        switchTab('profile');
+        setTimeout(showPromoInput, 800);
+        return;
+      }
+      const msg = d.error === 'limit_exceeded'
+        ? (isRu ? 'Лимит закончился' : 'Limit bitdi')
+        : d.error === 'questions_not_found'
+          ? (isRu ? 'Вопросы не найдены' : 'Sual tapılmadı')
+          : d.error;
+      toast('⚠️ ' + msg);
       if (d.limit_hit) { goTo('s-shop'); return; }
       goBack(); return;
     }
-    if (!d.questions?.length) { toast('Sual tapılmadı'); goBack(); return; }
+    if (!d.questions?.length) { toast(isRu ? 'Вопросы не найдены' : 'Sual tapılmadı'); goBack(); return; }
 
     S.qs        = d.questions;
     S.idx       = 0;
@@ -1596,13 +1609,13 @@ async function doStartTest(params) {
     if (params.type === 'sim') startTimer(3*60*60);
     else document.getElementById('exam-timer').style.display = 'none';
 
-    if (d.limit_left !== undefined) toast(`🚀 Test başladı! Qalan: ${d.limit_left}`);
+    if (d.limit_left !== undefined) toast(isRu ? `🚀 Тест начался! Осталось: ${d.limit_left}` : `🚀 Test başladı! Qalan: ${d.limit_left}`);
 
     S.stack = [];
     showScreen('s-exam');
     renderQ();
   } catch(e) {
-    toast('Xəta: ' + (e.message||''));
+    toast((isRu ? 'Ошибка: ' : 'Xəta: ') + (e.message||''));
     goBack();
   }
 }
@@ -1702,13 +1715,26 @@ async function selectAnswer(idx) {
 
   if (isOk) {
     S.score++;
-    if (S.mode === 'mistakes') api('/remove_mistake', { user_id:userId, question_id: String(q.id||q.question||'') }, {silent:true}).catch(()=>{});
+    if (S.mode === 'mistakes') {
+      api('/remove_mistake', {
+        user_id:userId,
+        question_id: String(q.id||q.question||''),
+        question: {
+          id: String(q.id||''),
+          question: q.question || '',
+          question_text: q.question_text || q.question || '',
+          subject: q.subject || '',
+          lang: q.lang || (S.user?.lang || 'az')
+        }
+      }, {silent:true}).catch(()=>{});
+    }
   } else {
     if (S.mode === 'normal' || S.mode === 'simulation') {
       api('/add_mistake', { user_id:userId, question:{
         id: String(q.id||''), question:q.question,
         options: q.options, correct_index: q.correct_index,
-        subject: q.subject||''
+        subject: q.subject||'',
+        lang: q.lang || (S.user?.lang || 'az')
       }}, {silent:true}).catch(()=>{});
     }
   }
@@ -1727,14 +1753,15 @@ async function selectAnswer(idx) {
 }
 
 function confirmStop() {
-  if (tg) tg.showConfirm('Testi bitirmək istəyirsiniz?', ok => { if (ok) doFinish(); });
-  else if (confirm('Testi bitirmək istəyirsiniz?')) doFinish();
+  const msg = t('Testi bitirmək istəyirsiniz?', 'Завершить тест?');
+  if (tg) tg.showConfirm(msg, ok => { if (ok) doFinish(); });
+  else if (confirm(msg)) doFinish();
 }
 
 function reportQ() {
   const q = S.qs[S.idx]; if (!q) return;
   api('/report', { user_id:userId, question_id: String(q.id||'') }).catch(()=>{});
-  toast('Xəta bildirişi göndərildi ✅');
+  toast(t('Xəta bildirişi göndərildi ✅', 'Жалоба отправлена ✅'));
 }
 
 // ═══════════════════════════════════════════════
@@ -2011,7 +2038,7 @@ async function loadMistakes() {
             <div style="font-size:10px;font-weight:700;color:var(--correct);text-transform:uppercase;margin-bottom:3px">✅ ${isRu ? 'Правильный ответ' : 'Düzgün cavab'}</div>
             <div style="font-size:13px;color:var(--text);background:rgba(58,170,122,.07);border:1px solid rgba(58,170,122,.2);border-radius:8px;padding:8px 10px;line-height:1.5">${escHtml(correctAns)}</div>
           </div>
-          <button class="btn btn-danger btn-sm" onclick="deleteSingleMistake(event,'${escHtml(qid)}',${i})">🗑 ${isRu ? 'Удалить' : 'Sil'}</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteSingleMistake(event,${i})">🗑 ${isRu ? 'Удалить' : 'Sil'}</button>
         </div>
       </div>`;
     }).join('');
@@ -2077,7 +2104,7 @@ function filterMistakes(query) {
           <div style="font-size:10px;font-weight:700;color:var(--correct);text-transform:uppercase;margin-bottom:3px">✅ ${isRu ? 'Правильный ответ' : 'Düzgün cavab'}</div>
           <div style="font-size:13px;color:var(--text);background:rgba(58,170,122,.07);border:1px solid rgba(58,170,122,.2);border-radius:8px;padding:8px 10px;line-height:1.5">${escHtml(correctAns)}</div>
         </div>
-        <button class="btn btn-danger btn-sm" onclick="deleteSingleMistake(event,'${escHtml(qid)}',${realIdx})">🗑 ${isRu ? 'Удалить' : 'Sil'}</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteSingleMistake(event,${realIdx})">🗑 ${isRu ? 'Удалить' : 'Sil'}</button>
       </div>
     </div>`;
   }).join('');
@@ -2092,12 +2119,14 @@ function toggleMistakeCard(i) {
   if (arr) arr.textContent = open ? '▼' : '▲';
 }
 
-async function deleteSingleMistake(e, qid, idx) {
+async function deleteSingleMistake(e, idx) {
   e.stopPropagation();
   const lang = S.user?.lang || 'az';
   const isRu = lang === 'ru';
+  const item = (S.savedMistakes || [])[idx] || {};
+  const qid = String(item.id || item.question || item.question_text || '');
   try {
-    await api('/remove_mistake', { user_id: userId, question_id: qid });
+    await api('/remove_mistake', { user_id: userId, question_id: qid, question: item });
     if (S.savedMistakes) S.savedMistakes.splice(idx, 1);
     const card = document.getElementById(`mk-${idx}`);
     if (card) card.remove();
@@ -2107,7 +2136,7 @@ async function deleteSingleMistake(e, qid, idx) {
     if (rem === 0) loadMistakes();
     loadMistakesCount();
   } catch(e2) {
-    toast('Xəta');
+    toast(isRu ? 'Ошибка' : 'Xəta');
   }
 }
 
@@ -2128,8 +2157,8 @@ async function confirmClearMistakes() {
   try {
     const ms = S.savedMistakes || [];
     for (const m of ms) {
-      const qid = String(m.id || m.question || '');
-      if (qid) await api('/remove_mistake', { user_id: userId, question_id: qid }).catch(()=>{});
+      const qid = String(m.id || m.question || m.question_text || '');
+      if (qid) await api('/remove_mistake', { user_id: userId, question_id: qid, question: m }).catch(()=>{});
     }
     S.savedMistakes = [];
     toast(isRu ? '🗑 Все ошибки удалены' : '🗑 Bütün səhvlər silindi');
@@ -2617,14 +2646,14 @@ const _downloadInProgress = new Set();
 
 async function downloadFile(fileId, fileTitle) {
   if (!fileId) return;
-  if (_downloadInProgress.has(fileId)) {
-    toast('⏳ Göndərilir...'); return;
-  }
-  if (!userId) { toast('Xəta: istifadəçi tapılmadı'); return; }
   const lang = S.user?.lang || 'az';
   const isRu = lang === 'ru';
+  if (_downloadInProgress.has(fileId)) {
+    toast(isRu ? '⏳ Отправляется...' : '⏳ Göndərilir...'); return;
+  }
+  if (!userId) { toast(isRu ? 'Ошибка: пользователь не найден' : 'Xəta: istifadəçi tapılmadı'); return; }
   tg?.HapticFeedback?.impactOccurred('medium');
-  toast(isRu ? '📤 Fayl göndərilir...' : '📤 Fayl göndərilir...');
+  toast(isRu ? '📤 Файл отправляется...' : '📤 Fayl göndərilir...');
   _downloadInProgress.add(fileId);
   try {
     // Try /materials/{id}/download first, fall back to /files/download/{id}
@@ -2635,7 +2664,10 @@ async function downloadFile(fileId, fileTitle) {
       d = await api(`/files/download/${fileId}?user_id=${userId}`);
     }
     if (d.ok) {
-      toast(isRu ? '✅ Fayl Telegram-da göndərildi!' : '✅ Fayl Telegram-da göndərildi!');
+      if (d.url) openExternalUrl(d.url);
+      toast(d.sent
+        ? (isRu ? '✅ Файл отправлен в Telegram!' : '✅ Fayl Telegram-da göndərildi!')
+        : (isRu ? '✅ Файл открыт для скачивания' : '✅ Fayl yükləmə üçün açıldı'));
       // Update local download count
       const f = FS.allFiles.find(x => x.id === fileId);
       if (f) {
@@ -2643,11 +2675,11 @@ async function downloadFile(fileId, fileTitle) {
         f.downloads = f.downloads_count;
       }
     } else {
-      toast('❌ ' + (d.error || (isRu ? 'Xəta' : 'Xəta')));
+      toast('❌ ' + (d.error || (isRu ? 'Ошибка' : 'Xəta')));
     }
   } catch(e) {
     if (e.message !== 'offline') {
-      toast(isRu ? '❌ Bağlantı xətası' : '❌ Bağlantı xətası');
+      toast(isRu ? '❌ Ошибка соединения' : '❌ Bağlantı xətası');
     }
   } finally {
     _downloadInProgress.delete(fileId);
@@ -2710,7 +2742,9 @@ async function loadProfile() {
     if (isPrem && u.premium_until) {
       const dd = new Date(u.premium_until);
       const days = Math.ceil((dd-new Date())/86400000);
-      subText = `Bitmə tarixi: ${dd.toLocaleDateString('az-AZ')} (${days} gün)`;
+      subText = lang === 'ru'
+        ? `Действует до: ${dd.toLocaleDateString('ru-RU')} (${days} дн.)`
+        : `Bitmə tarixi: ${dd.toLocaleDateString('az-AZ')} (${days} gün)`;
     }
 
     wrap.innerHTML = `
@@ -2718,32 +2752,32 @@ async function loadProfile() {
         <div class="profile-avatar">${init}</div>
         <div style="font-family:var(--fh);font-size:18px;font-weight:900">${escHtml(name)}</div>
         <div style="margin-top:6px">
-          ${isPrem ? '<span class="badge badge-mint">💎 PREMIUM</span>' : '<span class="badge badge-gray">Start Plan</span>'}
+          ${isPrem ? '<span class="badge badge-mint">💎 PREMIUM</span>' : `<span class="badge badge-gray">${lang==='ru'?'Базовый план':'Start Plan'}</span>`}
         </div>
       </div>
 
       <div class="card" style="margin-bottom:10px">
         <div class="stat-row" style="padding-top:0"><span class="stat-label">🆔 ID</span><span class="stat-val" style="font-size:12px;color:var(--text3)">${u.user_id}</span></div>
-        <div class="stat-row"><span class="stat-label">📊 Həll edilən</span><span class="stat-val">${d.tests_passed||0}</span></div>
-        <div class="stat-row"><span class="stat-label">🔥 Seriya</span><span class="stat-val">${cur} gün</span></div>
-        <div class="stat-row"><span class="stat-label">📌 Bu günkü hədəf</span><span class="stat-val">${td}/${goal}</span></div>
-        <div class="stat-row" style="padding-bottom:0"><span class="stat-label">📅 Abunəlik</span><span class="stat-val" style="font-size:12px;color:${isPrem?'var(--green)':'var(--text3)'}">${subText}</span></div>
+        <div class="stat-row"><span class="stat-label">📊 ${lang==='ru'?'Решено':'Həll edilən'}</span><span class="stat-val">${d.tests_passed||0}</span></div>
+        <div class="stat-row"><span class="stat-label">🔥 ${lang==='ru'?'Серия':'Seriya'}</span><span class="stat-val">${cur} ${lang==='ru'?'дн.':'gün'}</span></div>
+        <div class="stat-row"><span class="stat-label">📌 ${lang==='ru'?'Цель на сегодня':'Bu günkü hədəf'}</span><span class="stat-val">${td}/${goal}</span></div>
+        <div class="stat-row" style="padding-bottom:0"><span class="stat-label">📅 ${lang==='ru'?'Подписка':'Abunəlik'}</span><span class="stat-val" style="font-size:12px;color:${isPrem?'var(--green)':'var(--text3)'}">${subText}</span></div>
       </div>
 
       ${d.lim_info ? `
       <div class="card card-mint" style="margin-bottom:10px">
-        <div style="font-size:11px;font-weight:700;color:var(--mint);margin-bottom:8px">🔋 LİMİTLƏR</div>
-        <div class="stat-row" style="padding-top:0"><span class="stat-label">🚀 İmtahanlar</span><span class="stat-val">${d.lim_info.exam}</span></div>
-        <div class="stat-row"><span class="stat-label">📚 Mini-testlər</span><span class="stat-val">${d.lim_info.mini}</span></div>
-        <div class="stat-row" style="padding-bottom:0"><span class="stat-label">⚔️ Duellər</span><span class="stat-val">${d.lim_info.duel}</span></div>
+        <div style="font-size:11px;font-weight:700;color:var(--mint);margin-bottom:8px">🔋 ${lang==='ru'?'ЛИМИТЫ':'LİMİTLƏR'}</div>
+        <div class="stat-row" style="padding-top:0"><span class="stat-label">🚀 ${lang==='ru'?'Экзамены':'İmtahanlar'}</span><span class="stat-val">${d.lim_info.exam}</span></div>
+        <div class="stat-row"><span class="stat-label">📚 ${lang==='ru'?'Мини-тесты':'Mini-testlər'}</span><span class="stat-val">${d.lim_info.mini}</span></div>
+        <div class="stat-row" style="padding-bottom:0"><span class="stat-label">⚔️ ${lang==='ru'?'Дуэли':'Duellər'}</span><span class="stat-val">${d.lim_info.duel}</span></div>
       </div>` : ''}
 
-      <div class="section-label">PREMIUM & PAKETLƏR</div>
+      <div class="section-label">${lang==='ru'?'PREMIUM И ПАКЕТЫ':'PREMIUM & PAKETLƏR'}</div>
       <button class="btn btn-primary" style="margin-bottom:8px" onclick="goTo('s-shop')">
-        ${isPrem ? '➕ Uzat / Paket al' : '💎 Premium al — 15 AZN-dən'}
+        ${isPrem ? (lang==='ru'?'➕ Продлить / купить пакет':'➕ Uzat / Paket al') : (lang==='ru'?'💎 Купить Premium — от 15 AZN':'💎 Premium al — 15 AZN-dən')}
       </button>
 
-      <div class="section-label">HESAB</div>
+      <div class="section-label">${lang==='ru'?'АККАУНТ':'HESAB'}</div>
       <div class="section-label">${lang==='ru'?'ЯЗЫК / DİL':'DİL / ЯЗЫК'}</div>
       <div class="btn-row" style="margin-bottom:8px">
         <button class="btn ${lang==='az'?'btn-primary':'btn-outline'}" onclick="setLang('az')">🇦🇿 Azərbaycanca</button>
@@ -2751,9 +2785,9 @@ async function loadProfile() {
       </div>
       <div class="section-label">${lang==='ru'?'ПРОМОКОД':'PROMOKOD'}</div>
       <button class="btn btn-outline" style="margin-bottom:8px" onclick="openPromo()">🎟 ${lang==='ru'?'Промокод':'Promokod'}</button>
-      <button class="btn btn-outline" style="margin-bottom:8px" onclick="shareRef(${JSON.stringify(d.ref_link||'')})">📤 Dostu dəvət et (+1 gün)</button>
+      <button class="btn btn-outline" style="margin-bottom:8px" onclick="shareRef(${JSON.stringify(d.ref_link||'')})">📤 ${lang==='ru'?'Пригласить друга (+1 день)':'Dostu dəvət et (+1 gün)'}</button>
       <div class="btn-row" style="margin-bottom:8px">
-        <a href="https://t.me/rezidentadmin" style="flex:1;text-decoration:none"><button class="btn btn-ghost" style="width:100%">🆘 Dəstək</button></a>
+        <a href="https://t.me/rezidentadmin" style="flex:1;text-decoration:none"><button class="btn btn-ghost" style="width:100%">🆘 ${lang==='ru'?'Поддержка':'Dəstək'}</button></a>
       </div>
     `;
     // Task 4: Load user's own material submissions in background
@@ -2790,6 +2824,7 @@ function openPromo() {
 
 function showPromoInput() {
   const lang = S.user?.lang || 'az';
+  if (document.getElementById('promo-inline')) return;
   const wrap = document.getElementById('profile-content');
   if (!wrap) return;
   // Inject promo input at top of profile content
@@ -2861,6 +2896,13 @@ function t(az, ru) {
   return (S.user?.lang || 'az') === 'ru' ? ru : az;
 }
 
+function openExternalUrl(url) {
+  if (!url) return false;
+  if (tg?.openLink) tg.openLink(url, { try_instant_view: false });
+  else window.open(url, '_blank', 'noopener');
+  return true;
+}
+
 function updateStaticLabels() {
   // s-subjects
   const subjTitle = document.querySelector('#s-subjects .topbar-title');
@@ -2900,8 +2942,44 @@ function updateStaticLabels() {
   if (shopSub)   shopSub.textContent   = t('Paket seçin', 'Выберите пакет');
 
   // s-duel
+  const duelTitle = document.querySelector('#s-duel .topbar-title');
   const duelSub = document.querySelector('#s-duel .topbar-sub');
+  if (duelTitle) duelTitle.textContent = t('⚔️ Duel', '⚔️ Дуэль');
   if (duelSub) duelSub.textContent = t('PvP Rəqabət', 'PvP Соревнование');
+
+  const mistakesTitle = document.querySelector('#s-mistakes .topbar-title');
+  const mistakesInput = document.getElementById('mistakes-search-input');
+  const mistakesStart = document.querySelector('#start-mistakes-btn-wrap .btn-primary');
+  const mistakesClear = document.querySelector('#start-mistakes-btn-wrap .btn-danger');
+  if (mistakesTitle) mistakesTitle.textContent = t('Mənim Səhvlərim', 'Мои ошибки');
+  if (mistakesInput) mistakesInput.placeholder = t('Axtar: sual, mövzu, fənn...', 'Поиск: вопрос, тема, предмет...');
+  if (mistakesStart) mistakesStart.textContent = t('🧠 Səhvlər üzərində iş', '🧠 Работа над ошибками');
+  if (mistakesClear) mistakesClear.title = t('Bütün səhvləri sil', 'Удалить все ошибки');
+
+  const payTitle = document.querySelector('#s-pay-card .topbar-title');
+  if (payTitle) payTitle.textContent = t('💳 Kart ilə ödəniş', '💳 Оплата картой');
+  const payStepsLabel = document.getElementById('pay-steps-label');
+  const payStepsText = document.getElementById('pay-steps-text');
+  const copyCardLabel = document.getElementById('copy-card-label');
+  const receiptSection = document.getElementById('receipt-section-label');
+  const receiptUploadText = document.getElementById('receipt-upload-text');
+  const receiptBtn = document.getElementById('receipt-send-btn-inner');
+  const receiptHelp = document.getElementById('receipt-help-text');
+  if (payStepsLabel) payStepsLabel.textContent = t('ADDIMLAR', 'ШАГИ');
+  if (payStepsText) payStepsText.innerHTML = `
+    <b style="color:var(--text)">1.</b> ${t('Aşağıdakı kart nömrəsinə köçürün:', 'Переведите оплату на карту:')}<br>
+    <div style="background:var(--mintbg);border-radius:var(--r-s);padding:10px 12px;margin:8px 0;font-family:var(--fh);font-size:16px;font-weight:900;letter-spacing:.06em;color:var(--green);cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="copyCard()">
+      <span id="card-number">${CARD_NUMBER}</span>
+      <span id="copy-card-label" style="font-size:11px;color:var(--text3);font-weight:600">${t('Kopyala', 'Копировать')}</span>
+    </div>
+    <b style="color:var(--text)">2.</b> ${t('Ödənişin ekran görüntüsünü çəkin', 'Сделайте скриншот оплаты')}<br>
+    <b style="color:var(--text)">3.</b> ${t('Aşağıdan şəkli göndərin', 'Отправьте изображение ниже')}
+  `;
+  if (copyCardLabel) copyCardLabel.textContent = t('Kopyala', 'Копировать');
+  if (receiptSection) receiptSection.textContent = t('ÇEKİ GÖNDƏR', 'ОТПРАВИТЬ ЧЕК');
+  if (receiptUploadText) receiptUploadText.textContent = t('Şəkilə klikləyin və ya çəkin', 'Нажмите, чтобы выбрать или снять чек');
+  if (receiptBtn && !_sendReceiptInProgress) receiptBtn.textContent = t('✅ Çeki göndər', '✅ Отправить чек');
+  if (receiptHelp) receiptHelp.textContent = t('Admin yoxlayacaq və limiti aktivləşdirəcək', 'Администратор проверит и активирует лимит');
 
   // s-profile title
   const profTitle = document.querySelector('#s-profile > div:first-child > div:first-child');
@@ -2935,14 +3013,17 @@ function updateStaticLabels() {
 }
 
 function shareRef(link) {
-  if (!link) { toast('Profil yüklənmədi'); return; }
-  const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('Rezidentura imtahanına hazırlaşmaq üçün bot!')}`;
+  const lang = S.user?.lang || 'az';
+  const isRu = lang === 'ru';
+  if (!link) { toast(isRu ? 'Профиль ещё не загрузился' : 'Profil yüklənmədi'); return; }
+  const shareText = isRu ? 'Готовься к резидентуре вместе со мной!' : 'Rezidentura imtahanına hazırlaşmaq üçün bot!';
+  const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(shareText)}`;
   if (tg?.openTelegramLink) {
     tg.openTelegramLink(shareUrl);
   } else if (navigator.share) {
-    navigator.share({ url: link, text: 'Rezidentura imtahanına hazırlaşmaq üçün bot!' }).catch(()=>{});
+    navigator.share({ url: link, text: shareText }).catch(()=>{});
   } else if (navigator.clipboard) {
-    navigator.clipboard.writeText(link).then(() => toast('🔗 Link kopyalandı!')).catch(()=>{ window.open(shareUrl,'_blank'); });
+    navigator.clipboard.writeText(link).then(() => toast(isRu ? '🔗 Ссылка скопирована!' : '🔗 Link kopyalandı!')).catch(()=>{ window.open(shareUrl,'_blank'); });
   } else {
     window.open(shareUrl, '_blank');
   }
@@ -2972,7 +3053,7 @@ async function loadDuelHub() {
         </div>
       </div>
       ${d.my_duel ? `<div class="card card-mint" style="margin-bottom:10px">
-        <div style="font-size:13px;font-weight:700;margin-bottom:8px">⚔️ ${isTu?'Ваш активный дуэль':'Sizin aktiv duel'}</div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px">⚔️ ${isTu?'Ваша активная дуэль':'Sizin aktiv duel'}</div>
         <div style="font-size:12px;color:var(--text2);margin-bottom:10px">${d.my_duel.count} ${isTu?'вопросов':'sual'}</div>
         <div class="btn-row">
           <button class="btn btn-primary btn-sm" onclick="shareDuelLink('${d.my_duel.link||''}')">📤 ${isTu?'Поделиться':'Paylaş'}</button>
@@ -2991,17 +3072,19 @@ async function loadDuelHub() {
       </div>`;
   } catch(e) {
     if (document.getElementById('duel-content'))
-      document.getElementById('duel-content').innerHTML = '<div class="card card-danger"><p>Yüklənmə xətası</p></div>';
+      document.getElementById('duel-content').innerHTML = `<div class="card card-danger"><p>${(S.user?.lang||'az')==='ru'?'Ошибка загрузки':'Yüklənmə xətası'}</p></div>`;
   }
 }
 
 async function createDuel() {
   tg?.HapticFeedback?.impactOccurred('medium');
+  const lang = S.user?.lang || 'az';
+  const isRu = lang === 'ru';
   try {
     const d = await api('/duel/create', { user_id: userId, question_count: 10 });
-    if (d.ok && d.link) {
-      toast('✅ Duel yaradıldı!');
-      shareDuelLink(d.link);
+    if (d.ok) {
+      toast(isRu ? '✅ Дуэль создана!' : '✅ Duel yaradıldı!');
+      if (d.link) shareDuelLink(d.link);
       if (d.questions && d.questions.length) {
         S.qs = d.questions;
         S.idx = 0;
@@ -3017,8 +3100,15 @@ async function createDuel() {
       } else {
         loadDuelHub();
       }
-    } else toast('❌ ' + (d.error||'Xəta'));
-  } catch { toast('Bağlantı xətası'); }
+    } else {
+      const msg = d.error === 'limit_exceeded'
+        ? (isRu ? 'Лимит дуэлей закончился' : 'Duel limiti bitdi')
+        : d.error === 'questions_not_found'
+          ? (isRu ? 'Вопросы для дуэли не найдены' : 'Duel üçün sual tapılmadı')
+          : (d.error || (isRu ? 'Ошибка' : 'Xəta'));
+      toast('❌ ' + msg);
+    }
+  } catch { toast(isRu ? 'Ошибка соединения' : 'Bağlantı xətası'); }
 }
 
 let _duelActionInProgress = false;
@@ -3031,7 +3121,14 @@ async function joinDuel(duelId) {
   const isRu = lang === 'ru';
   try {
     const d = await api('/duel/join', { user_id: userId, duel_id: duelId });
-    if (d.error) { toast('❌ ' + d.error); return; }
+    if (d.error) {
+      const msg = d.error === 'duel_already_in'
+        ? (isRu ? 'Нельзя войти в свою дуэль' : 'Öz duelinizə qoşula bilməzsiniz')
+        : d.error === 'duel_not_available'
+          ? (isRu ? 'Дуэль уже недоступна' : 'Duel artıq əlçatan deyil')
+          : d.error;
+      toast('❌ ' + msg); return;
+    }
     if (d.ok && d.questions && d.questions.length > 0) {
       S.qs=d.questions; S.idx=0; S.score=0; S.mode='duel'; S.subject='Duel';
       S.log=[]; S.startTime=Date.now(); S.lastParams=null;
@@ -3042,7 +3139,7 @@ async function joinDuel(duelId) {
       toast(isRu ? '✅ Присоединились к дуэли! Продолжите в боте.' : '✅ Duelə qoşuldunuz! Bot-da davam edin.');
       loadDuelHub();
     } else {
-      toast('❌ ' + (d.error || (isRu ? 'Xəta' : 'Xəta')));
+      toast('❌ ' + (d.error || (isRu ? 'Ошибка' : 'Xəta')));
     }
   } catch(e) {
     if (e.message !== 'offline') toast(isRu ? 'Ошибка соединения' : 'Bağlantı xətası');
@@ -3068,9 +3165,12 @@ async function cancelDuel(duelId) {
 }
 
 function shareDuelLink(link) {
-  if (!link) { toast('Link mövcud deyil'); return; }
-  tg?.openTelegramLink?.('https://t.me/share/url?url=' + encodeURIComponent(link));
-  if (!tg) navigator.clipboard?.writeText(link).then(()=>toast('Link kopyalandı'));
+  const isRu = (S.user?.lang || 'az') === 'ru';
+  if (!link) { toast(isRu ? 'Ссылка недоступна' : 'Link mövcud deyil'); return; }
+  const shareUrl = 'https://t.me/share/url?url=' + encodeURIComponent(link);
+  if (tg?.openTelegramLink) tg.openTelegramLink(shareUrl);
+  else if (navigator.share) navigator.share({ url: link, text: isRu ? 'Присоединяйся к дуэли' : 'Duelə qoşul' }).catch(()=>{});
+  else navigator.clipboard?.writeText(link).then(()=>toast(isRu ? 'Ссылка скопирована' : 'Link kopyalandı')).catch(()=>window.open(shareUrl, '_blank'));
 }
 
 // ═══════════════════════════════════════════════
@@ -3124,15 +3224,16 @@ function selectPlan(key) {
 }
 
 function payCard() {
-  if (!S.selPlan) { toast('Paket seçin'); return; }
+  if (!S.selPlan) { toast(t('Paket seçin', 'Выберите пакет')); return; }
   const p = PRODUCTS[S.selPlan];
   document.getElementById('card-plan-label').textContent = p.name;
   document.getElementById('card-price-label').textContent = p.price;
   goTo('s-pay-card');
+  updateStaticLabels();
 }
 
 function copyCard() {
-  navigator.clipboard?.writeText(CARD_NUMBER).then(() => toast('Kart nömrəsi kopyalandı!')).catch(() => toast(CARD_NUMBER));
+  navigator.clipboard?.writeText(CARD_NUMBER).then(() => toast(t('Kart nömrəsi kopyalandı!', 'Номер карты скопирован!'))).catch(() => toast(CARD_NUMBER));
 }
 
 function triggerUpload() {
@@ -3152,7 +3253,7 @@ let _sendReceiptInProgress = false;
 
 async function sendReceipt() {
   if (_sendReceiptInProgress) return;
-  if (!S.receiptFile || !S.selPlan) { toast('Şəkil seçin'); return; }
+  if (!S.receiptFile || !S.selPlan) { toast(t('Şəkil seçin', 'Выберите изображение')); return; }
 
   const lang = S.user?.lang || 'az';
   const isRu = lang === 'ru';
@@ -3161,7 +3262,7 @@ async function sendReceipt() {
   const fd = new FormData();
   fd.append('user_id', String(userId));
   fd.append('plan_code', S.selPlan);
-  fd.append('receipt', S.receiptFile);
+  fd.append('file', S.receiptFile);
 
   _sendReceiptInProgress = true;
   if (btn) { btn.textContent = isRu ? '⏳ Отправляется...' : '⏳ Göndərilir...'; btn.disabled = true; }
@@ -3174,7 +3275,7 @@ async function sendReceipt() {
       S.receiptFile = null;
       goBack(); goBack();
     } else {
-      toast('❌ ' + (res.error || (isRu ? 'Xəta' : 'Xəta')));
+      toast('❌ ' + (res.error || (isRu ? 'Ошибка' : 'Xəta')));
     }
   } catch(e) {
     if (e.message !== 'offline') {
