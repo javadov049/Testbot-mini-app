@@ -587,8 +587,10 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
     </div>
     <div id="options-wrap"></div>
     <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="btn btn-ghost btn-sm" style="flex:1" id="explain-btn" onclick="showExplanation()">💡 <span id="explain-btn-label">Açıqla</span></button>
       <button class="btn btn-ghost btn-sm" style="flex:1" onclick="reportQ()">⚠️ Xəta bildir</button>
     </div>
+    <div id="explanation-box" style="display:none;margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(58,170,122,.08);border:1px solid rgba(58,170,122,.25);font-size:13px;line-height:1.6;color:var(--text);font-style:italic"></div>
   </div>
 </div>
 
@@ -1363,7 +1365,7 @@ function showAppLoginScreen(message='') {
       <button id="app-login-btn" onclick="startAppBotLogin()" style="width:100%;max-width:340px;padding:15px;background:#5BBB9B;color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:800;cursor:pointer">
         Войти через Telegram-бота
       </button>
-      <button onclick="openExternalUrl('https://t.me/Rezidentura_baku_bot')" style="width:100%;max-width:340px;padding:13px;background:transparent;color:#2A7A5E;border:1.5px solid #BBDDCB;border-radius:14px;font-size:14px;font-weight:800;cursor:pointer">
+      <button onclick="openExternalUrl('https://t.me/rezidentbot')" style="width:100%;max-width:340px;padding:13px;background:transparent;color:#2A7A5E;border:1.5px solid #BBDDCB;border-radius:14px;font-size:14px;font-weight:800;cursor:pointer">
         Открыть бота вручную
       </button>
       <div id="app-login-status" style="min-height:20px;font-size:13px;color:#4A6B5E">${escHtml(message)}</div>
@@ -1828,6 +1830,15 @@ function renderQ() {
   document.getElementById('q-card').classList.remove('fu');
   void document.getElementById('q-card').offsetWidth;
   document.getElementById('q-card').classList.add('fu');
+
+  // Reset explanation box and button for new question
+  const explBox = document.getElementById('explanation-box');
+  if (explBox) { explBox.style.display = 'none'; explBox.textContent = ''; }
+  const explBtn = document.getElementById('explain-btn');
+  if (explBtn) explBtn.disabled = false;
+  const explLbl = document.getElementById('explain-btn-label');
+  const isRuQ = (S.user?.lang || 'az') === 'ru';
+  if (explLbl) explLbl.textContent = isRuQ ? 'Объяснить' : 'Açıqla';
 }
 
 // ═══════════════════════════════════════════════
@@ -1878,7 +1889,8 @@ async function selectAnswer(idx) {
         id: String(q.id||''), question:q.question,
         options: q.options, correct_index: q.correct_index,
         subject: q.subject||'',
-        lang: q.lang || (S.user?.lang || 'az')
+        lang: q.lang || (S.user?.lang || 'az'),
+        explanation: q.explanation || ''
       }}, {silent:true}).catch(()=>{});
     }
   }
@@ -2182,7 +2194,11 @@ async function loadMistakes() {
             <div style="font-size:10px;font-weight:700;color:var(--correct);text-transform:uppercase;margin-bottom:3px">✅ ${isRu ? 'Правильный ответ' : 'Düzgün cavab'}</div>
             <div style="font-size:13px;color:var(--text);background:rgba(58,170,122,.07);border:1px solid rgba(58,170,122,.2);border-radius:8px;padding:8px 10px;line-height:1.5">${escHtml(correctAns)}</div>
           </div>
-          <button class="btn btn-danger btn-sm" onclick="deleteSingleMistake(event,${i})">🗑 ${isRu ? 'Удалить' : 'Sil'}</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" style="flex:1" id="mk-expl-btn-${i}" onclick="showMistakeExplanation(event,${i})">💡 ${isRu ? 'Объяснение' : 'Açıqlama'}</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteSingleMistake(event,${i})">🗑 ${isRu ? 'Удалить' : 'Sil'}</button>
+          </div>
+          <div id="mk-expl-${i}" style="display:none;margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(58,170,122,.08);border:1px solid rgba(58,170,122,.25);font-size:13px;line-height:1.6;color:var(--text);font-style:italic"></div>
         </div>
       </div>`;
     }).join('');
@@ -2248,7 +2264,11 @@ function filterMistakes(query) {
           <div style="font-size:10px;font-weight:700;color:var(--correct);text-transform:uppercase;margin-bottom:3px">✅ ${isRu ? 'Правильный ответ' : 'Düzgün cavab'}</div>
           <div style="font-size:13px;color:var(--text);background:rgba(58,170,122,.07);border:1px solid rgba(58,170,122,.2);border-radius:8px;padding:8px 10px;line-height:1.5">${escHtml(correctAns)}</div>
         </div>
-        <button class="btn btn-danger btn-sm" onclick="deleteSingleMistake(event,${realIdx})">🗑 ${isRu ? 'Удалить' : 'Sil'}</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" style="flex:1" id="mk-expl-btn-${realIdx}" onclick="showMistakeExplanation(event,${realIdx})">💡 ${isRu ? 'Объяснение' : 'Açıqlama'}</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteSingleMistake(event,${realIdx})">🗑 ${isRu ? 'Удалить' : 'Sil'}</button>
+        </div>
+        <div id="mk-expl-${realIdx}" style="display:none;margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(58,170,122,.08);border:1px solid rgba(58,170,122,.25);font-size:13px;line-height:1.6;color:var(--text);font-style:italic"></div>
       </div>
     </div>`;
   }).join('');
@@ -2261,6 +2281,94 @@ function toggleMistakeCard(i) {
   const open = body.style.display !== 'none';
   body.style.display = open ? 'none' : 'block';
   if (arr) arr.textContent = open ? '▼' : '▲';
+}
+
+// ═══════════════════════════════════════════════
+//  EXPLANATION (💡 Açıqla / Объяснить)
+// ═══════════════════════════════════════════════
+async function showExplanation() {
+  const q = S.qs ? S.qs[S.idx] : null;
+  const lang = S.user?.lang || 'az';
+  const isRu = lang === 'ru';
+  const explBox = document.getElementById('explanation-box');
+  const explBtn = document.getElementById('explain-btn');
+  const explLbl = document.getElementById('explain-btn-label');
+
+  // Already shown - hide
+  if (explBox && explBox.style.display !== 'none') {
+    explBox.style.display = 'none';
+    if (explLbl) explLbl.textContent = isRu ? 'Объяснить' : 'Açıqla';
+    return;
+  }
+
+  // Try to get explanation from current question
+  let explanation = q?.explanation || null;
+
+  // Fallback: fetch from API by question id
+  if (!explanation && q?.id) {
+    if (explLbl) explLbl.textContent = isRu ? '...' : '...';
+    if (explBtn) explBtn.disabled = true;
+    try {
+      const d = await api(`/question_explanation/${q.id}`, null, {silent:true});
+      explanation = d?.explanation || null;
+    } catch(_) {}
+    if (explBtn) explBtn.disabled = false;
+  }
+
+  if (!explanation) {
+    if (explLbl) explLbl.textContent = isRu ? 'Объяснить' : 'Açıqla';
+    toast(isRu ? 'Объяснение пока не добавлено' : 'Açıqlama hələ əlavə edilməyib');
+    return;
+  }
+
+  if (explBox) {
+    explBox.textContent = '💡 ' + explanation;
+    explBox.style.display = 'block';
+  }
+  if (explLbl) explLbl.textContent = isRu ? 'Скрыть' : 'Gizlət';
+}
+
+// Показывает объяснение в карточке ошибки (s-mistakes)
+async function showMistakeExplanation(e, idx) {
+  e.stopPropagation();
+  const lang = S.user?.lang || 'az';
+  const isRu = lang === 'ru';
+  const item = (S.savedMistakes || [])[idx] || {};
+  const boxId = `mk-expl-${idx}`;
+  const btnId = `mk-expl-btn-${idx}`;
+  const box = document.getElementById(boxId);
+  const btn = document.getElementById(btnId);
+
+  // Toggle hide
+  if (box && box.style.display !== 'none') {
+    box.style.display = 'none';
+    if (btn) btn.textContent = isRu ? '💡 Объяснение' : '💡 Açıqlama';
+    return;
+  }
+
+  // Try explanation from saved data
+  let explanation = item.explanation || null;
+
+  // Fallback: fetch from API
+  if (!explanation && item.id) {
+    if (btn) btn.textContent = '...';
+    try {
+      const d = await api(`/question_explanation/${item.id}`, null, {silent:true});
+      explanation = d?.explanation || null;
+    } catch(_) {}
+  }
+
+  if (!explanation) {
+    if (btn) btn.textContent = isRu ? '💡 Объяснение' : '💡 Açıqlama';
+    toast(isRu ? 'Объяснение пока не добавлено' : 'Açıqlama hələ əlavə edilməyib');
+    return;
+  }
+
+  if (box) {
+    box.textContent = '💡 ' + explanation;
+    box.style.display = 'block';
+  }
+  if (btn) btn.textContent = isRu ? '🙈 Скрыть' : '🙈 Gizlət';
 }
 
 async function deleteSingleMistake(e, idx) {
