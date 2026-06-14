@@ -38,6 +38,7 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
 
 /* ── SCREENS ── */
 .screen { position:absolute; inset:0; display:flex; flex-direction:column; overflow:hidden; }
+.screen-safe-top { padding-top:env(safe-area-inset-top, 0px); }
 .screen.hidden { display:none !important; }
 
 /* ── SCROLL ── */
@@ -48,6 +49,7 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
 .topbar {
   display:flex; align-items:center; gap:10px;
   padding:12px 14px 10px;
+  padding-top:max(12px, env(safe-area-inset-top, 12px));
   background:var(--cream);
   z-index:10; flex-shrink:0;
   border-bottom:1.5px solid var(--border);
@@ -399,7 +401,7 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
      HOME SCREEN
 ══════════════════════════════════════ -->
 <div class="screen hidden" id="s-home">
-  <div class="scroll" style="padding-top:14px">
+  <div class="scroll" style="padding-top:max(14px, calc(env(safe-area-inset-top, 0px) + 14px))">
 
     <div class="hero fu" id="hero">
       <div class="hero-name" id="hero-name">Salam, həkim! 👋</div>
@@ -857,7 +859,7 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
 <!-- ══════════════════════════════════════
      TOP
 ══════════════════════════════════════ -->
-<div class="screen hidden" id="s-top">
+<div class="screen screen-safe-top hidden" id="s-top">
   <div style="padding:12px 14px 10px;border-bottom:1.5px solid var(--border);flex-shrink:0">
     <div style="font-family:var(--fh);font-size:17px;font-weight:900">🏆 TOP-20</div>
     <div style="font-size:12px;color:var(--text2)">Həftəlik liderlər</div>
@@ -881,7 +883,7 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
 <!-- ══════════════════════════════════════
      PROFILE
 ══════════════════════════════════════ -->
-<div class="screen hidden" id="s-profile">
+<div class="screen screen-safe-top hidden" id="s-profile">
   <div style="padding:12px 14px 10px;border-bottom:1.5px solid var(--border);flex-shrink:0">
     <div style="font-family:var(--fh);font-size:17px;font-weight:900">👤 Kabinet</div>
   </div>
@@ -2003,14 +2005,15 @@ async function doFinish() {
   clearInterval(S.timerIv);
 
   const score = S.score, total = S.qs.length||1;
-  const wrong = total - score;
-  const pct   = Math.round(score/total*100);
+  const answered = Math.min(S.idx, total); // how many questions actually answered
+  const wrong = answered - score;
+  const pct   = answered > 0 ? Math.round(score/answered*100) : 0;
 
   // Save to server
   try {
     const res = await api('/finish_test', {
       user_id: userId, subject: S.subject,
-      score, total, answers_log: S.log, mode: S.mode,
+      score, total: answered, answers_log: S.log, mode: S.mode,
     });
     if (res.user) { S.user = res.user; }
   } catch {}
@@ -2023,7 +2026,7 @@ async function doFinish() {
   document.getElementById('res-pct').textContent     = `${pct}%`;
   document.getElementById('res-correct').textContent = score;
   document.getElementById('res-wrong').textContent   = wrong;
-  document.getElementById('res-total').textContent   = total;
+  document.getElementById('res-total').textContent   = answered;
 
   const streak = S.user?.streak?.current || 0;
   const td  = S.user?.stats?.today_solved || score;
