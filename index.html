@@ -43,6 +43,9 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
 
 /* ── SCROLL ── */
 .scroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:0 14px 90px; }
+@media (min-width: 600px) {
+  .scroll { padding-bottom: max(90px, env(safe-area-inset-bottom, 20px) + 60px); }
+}
 .scroll::-webkit-scrollbar { display:none; }
 
 /* ── TOPBAR ── */
@@ -258,6 +261,9 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
   padding:10px 14px; background:var(--white);
   border-bottom:1.5px solid var(--border); flex-shrink:0;
   box-shadow:0 2px 8px rgba(60,140,100,.06);
+}
+#s-exam .scroll > div[style*="max-width"] {
+  padding: 0 2px;
 }
 .exam-num { font-family:var(--fh); font-size:13px; font-weight:800; white-space:nowrap; }
 .exam-timer { font-size:12px; font-weight:700; color:var(--warn); white-space:nowrap; }
@@ -580,6 +586,7 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
     <button class="btn btn-danger btn-sm" style="width:auto;padding:6px 11px;font-size:12px;margin-left:4px" onclick="confirmStop()">🏁</button>
   </div>
   <div class="scroll" style="padding-top:12px">
+    <div style="max-width:680px;margin:0 auto;width:100%">
     <div class="card fu" id="q-card">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
         <span id="q-type-badge" class="q-type-badge" style="display:none"></span>
@@ -588,11 +595,12 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
       <div style="font-size:15px;line-height:1.65;font-weight:500" id="q-text"></div>
     </div>
     <div id="options-wrap"></div>
-    <div style="display:flex;gap:8px;margin-top:6px">
-      <button class="btn btn-ghost btn-sm" style="flex:1" id="explain-btn" onclick="showExplanation()">💡 <span id="explain-btn-label">Açıqla</span></button>
-      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="reportQ()">⚠️ Xəta bildir</button>
+    <div style="display:flex;gap:8px;margin-top:6px;justify-content:center;max-width:480px;margin-left:auto;margin-right:auto;width:100%">
+      <button class="btn btn-ghost btn-sm" style="flex:1;max-width:220px" id="explain-btn" onclick="showExplanation()">💡 <span id="explain-btn-label">Açıqla</span></button>
+      <button class="btn btn-ghost btn-sm" style="flex:1;max-width:220px" onclick="reportQ()">⚠️ Xəta bildir</button>
     </div>
     <div id="explanation-box" style="display:none;margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(58,170,122,.08);border:1px solid rgba(58,170,122,.25);font-size:13px;line-height:1.6;color:var(--text);font-style:italic"></div>
+    </div>
   </div>
 </div>
 
