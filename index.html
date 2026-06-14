@@ -1848,17 +1848,14 @@ function renderQ() {
   document.getElementById('q-text').textContent = q.question || '';
 
   const opts = q.options || [];
-  // BUG-007 fix: only shuffle for type 1; type 2/3 order must be preserved
+  // Shuffle options for ALL question types (1, 2, 3) — track correct answer by reference
   let shuffled = [...opts];
   let correctIdx = typeof q.correct_index === 'number' ? q.correct_index : 0;
 
-  if (qType === 1) {
-    const flagged = opts.map((o,i) => [o, i===correctIdx]);
-    for (let j=flagged.length-1;j>0;j--) { const k=Math.floor(Math.random()*(j+1)); [flagged[j],flagged[k]]=[flagged[k],flagged[j]]; }
-    shuffled   = flagged.map(p=>p[0]);
-    correctIdx = flagged.findIndex(p=>p[1]);
-    // type 2/3: shuffled and correctIdx already correctly initialised above (no shuffle)
-  }
+  const flagged = opts.map((o,i) => [o, i===correctIdx]);
+  for (let j=flagged.length-1;j>0;j--) { const k=Math.floor(Math.random()*(j+1)); [flagged[j],flagged[k]]=[flagged[k],flagged[j]]; }
+  shuffled   = flagged.map(p=>p[0]);
+  correctIdx = flagged.findIndex(p=>p[1]);
 
   S.curOpts    = shuffled;
   S.curCorrect = correctIdx;
