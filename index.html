@@ -31,6 +31,7 @@
   --r-s:     10px;
   --fh:      'Nunito', sans-serif;
   --fb:      'Manrope', sans-serif;
+  --safe-top: env(safe-area-inset-top, 0px);
 }
 
 * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
@@ -38,7 +39,7 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
 
 /* ── SCREENS ── */
 .screen { position:absolute; inset:0; display:flex; flex-direction:column; overflow:hidden; }
-.screen-safe-top { padding-top:env(safe-area-inset-top, 0px); }
+.screen-safe-top { padding-top:var(--safe-top); }
 .screen.hidden { display:none !important; }
 
 /* ── SCROLL ── */
@@ -52,7 +53,7 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
 .topbar {
   display:flex; align-items:center; gap:10px;
   padding:12px 14px 10px;
-  padding-top:max(12px, env(safe-area-inset-top, 12px));
+  padding-top:max(12px, calc(var(--safe-top) + 4px));
   background:var(--cream);
   z-index:10; flex-shrink:0;
   border-bottom:1.5px solid var(--border);
@@ -407,7 +408,7 @@ html,body { height:100%; overflow:hidden; background:var(--cream); color:var(--t
      HOME SCREEN
 ══════════════════════════════════════ -->
 <div class="screen hidden" id="s-home">
-  <div class="scroll" style="padding-top:max(14px, calc(env(safe-area-inset-top, 0px) + 14px))">
+  <div class="scroll" id="home-scroll" style="padding-top:calc(var(--safe-top) + 14px)">
 
     <div class="hero fu" id="hero">
       <div class="hero-name" id="hero-name">Salam, həkim! 👋</div>
@@ -1064,6 +1065,30 @@ const SUBJ_ICONS = {
 // ═══════════════════════════════════════════════
 const tg = window.Telegram?.WebApp;
 if (tg) { tg.expand(); if (tg.requestFullscreen) tg.requestFullscreen(); tg.setHeaderColor('#F5F0E8'); tg.setBackgroundColor('#F5F0E8'); tg.ready(); }
+
+// ── SAFE AREA: set --safe-top dynamically from Telegram API or CSS env ──
+function applySafeTop() {
+  let safeTop = 0;
+  if (tg) {
+    // tg.safeAreaInset is available in Telegram WebApp 7.7+ (fullscreen mode)
+    const tgSafe = tg.safeAreaInset?.top ?? 0;
+    // tg.contentSafeAreaInset is available in newer versions
+    const tgContent = tg.contentSafeAreaInset?.top ?? 0;
+    safeTop = Math.max(tgSafe, tgContent);
+  }
+  if (safeTop > 0) {
+    document.documentElement.style.setProperty('--safe-top', safeTop + 'px');
+  }
+  // If safeTop === 0, CSS env(safe-area-inset-top) fallback in :root is used
+}
+applySafeTop();
+// Also re-apply on viewport resize (orientation change, etc.)
+window.addEventListener('resize', applySafeTop);
+if (tg) {
+  tg.onEvent('safeAreaChanged', applySafeTop);
+  tg.onEvent('contentSafeAreaChanged', applySafeTop);
+  tg.onEvent('viewportChanged', applySafeTop);
+}
 
 function safeDecodeURIComponent(value) {
   try { return decodeURIComponent(value || ''); } catch { return value || ''; }
