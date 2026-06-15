@@ -1554,6 +1554,15 @@ function handleStartParam() {
     // Go to profile tab, wait for loadProfile to render, then open promo input
     switchTab('profile');
     setTimeout(() => showPromoInput(), 700);
+  } else if (param.startsWith('promo_')) {
+    // promo_BONUS → open promo input and auto-fill the code
+    const code = param.slice(6).toUpperCase();
+    switchTab('profile');
+    setTimeout(() => {
+      showPromoInput();
+      const inp = document.getElementById('promo-code-input');
+      if (inp) { inp.value = code; inp.dispatchEvent(new Event('input')); }
+    }, 700);
   }
 }
 
