@@ -1551,18 +1551,26 @@ async function init() {
 function handleStartParam() {
   const param = tg?.initDataUnsafe?.start_param || '';
   if (param === 'promo') {
-    // Go to profile tab, wait for loadProfile to render, then open promo input
     switchTab('profile');
-    setTimeout(() => showPromoInput(), 700);
+    setTimeout(() => showPromoInput(), 900);
   } else if (param.startsWith('promo_')) {
-    // promo_BONUS → open promo input and auto-fill the code
+    // promo_BONUS → открывает форму с уже заполненным кодом
     const code = param.slice(6).toUpperCase();
     switchTab('profile');
-    setTimeout(() => {
-      showPromoInput();
+    // Ждём пока loadProfile() отрендерит profile-content, потом вставляем код
+    function tryFill(attempts) {
       const inp = document.getElementById('promo-code-input');
-      if (inp) { inp.value = code; inp.dispatchEvent(new Event('input')); }
-    }, 700);
+      if (inp) {
+        inp.value = code;
+        inp.dispatchEvent(new Event('input'));
+        return;
+      }
+      showPromoInput();
+      const inp2 = document.getElementById('promo-code-input');
+      if (inp2) { inp2.value = code; inp2.dispatchEvent(new Event('input')); return; }
+      if (attempts > 0) setTimeout(() => tryFill(attempts - 1), 300);
+    }
+    setTimeout(() => tryFill(5), 900);
   }
 }
 
@@ -1871,17 +1879,12 @@ function renderQ() {
   document.getElementById('q-text').textContent = q.question || '';
 
   const opts = q.options || [];
-  // BUG-007 fix: only shuffle for type 1; type 2/3 order must be preserved
-  let shuffled = [...opts];
+  // Shuffle options for ALL question types (1, 2, 3) — correct answer tracked by reference
   let correctIdx = typeof q.correct_index === 'number' ? q.correct_index : 0;
-
-  if (qType === 1) {
-    const flagged = opts.map((o,i) => [o, i===correctIdx]);
-    for (let j=flagged.length-1;j>0;j--) { const k=Math.floor(Math.random()*(j+1)); [flagged[j],flagged[k]]=[flagged[k],flagged[j]]; }
-    shuffled   = flagged.map(p=>p[0]);
-    correctIdx = flagged.findIndex(p=>p[1]);
-    // type 2/3: shuffled and correctIdx already correctly initialised above (no shuffle)
-  }
+  const flagged = opts.map((o,i) => [o, i===correctIdx]);
+  for (let j=flagged.length-1;j>0;j--) { const k=Math.floor(Math.random()*(j+1)); [flagged[j],flagged[k]]=[flagged[k],flagged[j]]; }
+  const shuffled = flagged.map(p=>p[0]);
+  correctIdx     = flagged.findIndex(p=>p[1]);
 
   S.curOpts    = shuffled;
   S.curCorrect = correctIdx;
