@@ -1806,6 +1806,11 @@ async function doStartTest(params) {
         setTimeout(showPromoInput, 800);
         return;
       }
+      if (d.error === 'private_access_required') {
+        toast(isRu ? '🔒 Нет доступа к приватным тестам' : '🔒 Şəxsi testlərə giriş yoxdur', 3200);
+        goBack();
+        return;
+      }
       const msg = d.error === 'limit_exceeded'
         ? (isRu ? 'Лимит закончился' : 'Limit bitdi')
         : d.error === 'questions_not_found'
